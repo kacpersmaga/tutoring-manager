@@ -1,0 +1,12 @@
+{
+  "name": "tutoring-manager-screenshots",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "screenshots": "node screenshots.mjs",
+    "record": "node record-flow.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.65.0"
+  }
+}
