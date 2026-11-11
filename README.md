@@ -18,7 +18,7 @@ docker compose up --build
 | What | Where |
 | --- | --- |
 | App | http://localhost:8080 |
-| Mailpit (all outgoing email) | http://localhost:8025 |
+| Mailpit (all outgoing email, including attendance links) | http://localhost:8025 |
 | Health check | http://localhost:8080/health |
 
 ## Tests
@@ -43,6 +43,9 @@ dotnet test
 - **The database guarantees no overlapping lessons**, not just the code: an exclusion constraint `EXCLUDE USING gist (tutor_id WITH =, tstzrange(start_utc, end_utc) WITH &&) WHERE (status <> 'Cancelled')`. Two concurrent requests cannot both win. The service still checks first, so the user gets a readable 409 ("overlaps with Anna on 2027-01-20 at 17:00").
 - **"Completed" is set by the tutor**, one lesson at a time or with "mark all past lessons as completed". An automatic rule would bill lessons that silently did not happen.
 - **Attendance links carry a random token, the database only its hash.** 32 bytes from `RandomNumberGenerator`, Base64Url in the URL, SHA-256 in the database: a leaked database dump contains no working links. Moving or cancelling a lesson revokes its links; a link expires when the lesson starts. The page behind the link shows only the date, time and the tutor's name.
+- **The email queue is a table, not a message broker.** `ScheduledEmails` rows are written in the same transaction as the lesson, so a lesson can never exist without its email (no dual-write problem). A `BackgroundService` polls every 30 s and claims a batch with `UPDATE … WHERE id IN (SELECT … FOR UPDATE SKIP LOCKED) RETURNING *`: several app instances never take the same row, and none waits for another. A claimed row is leased for 5 minutes; if the instance dies, the lease expires and another instance takes over. That makes delivery **at-least-once**: a crash after the SMTP server accepted the email but before the row was marked as sent means the student gets it twice. Exactly-once delivery over SMTP does not exist; a duplicate reminder is harmless.
+- **Retries with backoff:** 1, 5, 25 and 60 minutes; after 5 attempts the email is `Failed` and the tutor sees it on the lesson.
+- **When to send:** 24 hours before the lesson, or right away if the lesson is sooner. Moving a lesson cancels the pending email and queues a new one; cancelling a lesson cancels it. The attendance token is created when the email is sent, so the raw token never sits in the database.
 - **Optimistic concurrency with PostgreSQL's `xmin`**: a lesson edited in two tabs answers 409 instead of silently overwriting, without an extra version column.
 - **Lesson price is copied from the student's rate** when the lesson is created, so changing the rate does not rewrite past invoices.
 - **Bank accounts are stored normalized** (26 digits, no `PL`, no spaces) and checked with the IBAN mod-97 checksum, so a typo is caught when the account is entered, not when a payment fails to match.
