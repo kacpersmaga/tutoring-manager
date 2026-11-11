@@ -102,3 +102,22 @@ public class AuthTests(ApiFactory factory)
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 }
+
+[Collection(ApiCollection.Name)]
+public class AccountDeletionTests(ApiFactory factory)
+{
+    [Fact]
+    public async Task Deleting_the_account_erases_the_tutors_data()
+    {
+        var tutor = await factory.CreateTutorClientAsync();
+        var student = await StudentTests.CreateStudentAsync(tutor);
+        await LessonTests.CreateLessonAsync(tutor, student.Id, "2027-01-20", "10:00");
+
+        var wrongPassword = await tutor.PostAsJsonAsync("/api/auth/delete-account", new { password = "not my password" });
+        Assert.Equal(HttpStatusCode.BadRequest, wrongPassword.StatusCode);
+
+        var deleted = await tutor.PostAsJsonAsync("/api/auth/delete-account", new { password = TestClients.Password });
+        Assert.Equal(HttpStatusCode.NoContent, deleted.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await tutor.GetAsync("/api/auth/me")).StatusCode);
+    }
+}
