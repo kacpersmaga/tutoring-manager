@@ -319,6 +319,76 @@ namespace TutoringManager.Api.Infrastructure.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("TutoringManager.Api.Emails.ScheduledEmail", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("last_error");
+
+                    b.Property<Guid?>("LessonId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lesson_id");
+
+                    b.Property<DateTime?>("LockedUntilUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("locked_until_utc");
+
+                    b.Property<DateTime>("NextAttemptAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("next_attempt_at_utc");
+
+                    b.Property<DateTime>("SendAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("send_at_utc");
+
+                    b.Property<DateTime?>("SentAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at_utc");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("ToEmail")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("to_email");
+
+                    b.Property<Guid>("TutorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tutor_id");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("type");
+
+                    b.HasKey("Id")
+                        .HasName("pk_scheduled_emails");
+
+                    b.HasIndex("LessonId")
+                        .HasDatabaseName("ix_scheduled_emails_lesson_id");
+
+                    b.HasIndex("Status", "NextAttemptAtUtc")
+                        .HasDatabaseName("ix_scheduled_emails_status_next_attempt_at_utc");
+
+                    b.ToTable("scheduled_emails", (string)null);
+                });
+
             modelBuilder.Entity("TutoringManager.Api.Lessons.Lesson", b =>
                 {
                     b.Property<Guid>("Id")
@@ -661,6 +731,15 @@ namespace TutoringManager.Api.Infrastructure.Migrations
                         .HasConstraintName("fk_attendance_tokens_lessons_lesson_id");
                 });
 
+            modelBuilder.Entity("TutoringManager.Api.Emails.ScheduledEmail", b =>
+                {
+                    b.HasOne("TutoringManager.Api.Lessons.Lesson", null)
+                        .WithMany("Emails")
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("fk_scheduled_emails_lessons_lesson_id");
+                });
+
             modelBuilder.Entity("TutoringManager.Api.Lessons.Lesson", b =>
                 {
                     b.HasOne("TutoringManager.Api.Lessons.LessonSeries", null)
@@ -721,6 +800,8 @@ namespace TutoringManager.Api.Infrastructure.Migrations
 
             modelBuilder.Entity("TutoringManager.Api.Lessons.Lesson", b =>
                 {
+                    b.Navigation("Emails");
+
                     b.Navigation("Note");
                 });
 

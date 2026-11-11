@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using TutoringManager.Api.Attendance;
 using TutoringManager.Api.Auth;
+using TutoringManager.Api.Emails;
 using TutoringManager.Api.Lessons;
 using TutoringManager.Api.Students;
 
@@ -19,6 +20,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, CurrentTutor c
 
     // No TutorId and no filter: tokens are only ever looked up by their hash.
     public DbSet<AttendanceToken> AttendanceTokens => Set<AttendanceToken>();
+    public DbSet<ScheduledEmail> ScheduledEmails => Set<ScheduledEmail>();
 
     // Read by the global query filters on every query, so a tutor only ever sees their own rows.
     // Background workers have no signed-in tutor and use IgnoreQueryFilters() explicitly.
@@ -41,5 +43,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, CurrentTutor c
         builder.Entity<Lesson>().HasQueryFilter(l => l.TutorId == CurrentTutorId);
         builder.Entity<LessonNote>().HasQueryFilter(n => n.TutorId == CurrentTutorId);
         builder.Entity<LessonSeries>().HasQueryFilter(s => s.TutorId == CurrentTutorId);
+        builder.Entity<ScheduledEmail>().HasQueryFilter(e => e.TutorId == CurrentTutorId);
     }
 }

@@ -1,3 +1,4 @@
+using TutoringManager.Api.Emails;
 using TutoringManager.Api.Students;
 
 namespace TutoringManager.Api.Lessons;
@@ -50,6 +51,7 @@ public class Lesson
 
     public Student? Student { get; set; }
     public LessonNote? Note { get; set; }
+    public List<ScheduledEmail> Emails { get; set; } = [];
 
     public void SetTime(DateOnly localDate, TimeOnly localStartTime, int durationMinutes, string timeZoneId)
     {
