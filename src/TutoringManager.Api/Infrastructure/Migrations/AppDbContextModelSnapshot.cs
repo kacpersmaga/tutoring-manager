@@ -585,6 +585,132 @@ namespace TutoringManager.Api.Infrastructure.Migrations
                     b.ToTable("lesson_series", (string)null);
                 });
 
+            modelBuilder.Entity("TutoringManager.Api.Payments.BankImport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BankFormat")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("bank_format");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("file_name");
+
+                    b.Property<string>("FileSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("file_sha256");
+
+                    b.Property<DateTime>("ImportedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("imported_at");
+
+                    b.Property<Guid>("TutorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tutor_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_bank_imports");
+
+                    b.HasIndex("TutorId", "FileSha256")
+                        .IsUnique()
+                        .HasDatabaseName("ix_bank_imports_tutor_id_file_sha256");
+
+                    b.ToTable("bank_imports", (string)null);
+                });
+
+            modelBuilder.Entity("TutoringManager.Api.Payments.BankTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<DateOnly>("BookingDate")
+                        .HasColumnType("date")
+                        .HasColumnName("booking_date");
+
+                    b.Property<string>("CounterpartyAccount")
+                        .IsRequired()
+                        .HasMaxLength(34)
+                        .HasColumnType("character varying(34)")
+                        .HasColumnName("counterparty_account");
+
+                    b.Property<string>("CounterpartyName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("counterparty_name");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("currency");
+
+                    b.Property<Guid>("ImportId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("import_id");
+
+                    b.Property<string>("MatchedBy")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("matched_by");
+
+                    b.Property<Guid?>("StudentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("student_id");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("title");
+
+                    b.Property<string>("TransactionKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("transaction_key");
+
+                    b.Property<Guid>("TutorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tutor_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_bank_transactions");
+
+                    b.HasIndex("ImportId")
+                        .HasDatabaseName("ix_bank_transactions_import_id");
+
+                    b.HasIndex("StudentId")
+                        .HasDatabaseName("ix_bank_transactions_student_id");
+
+                    b.HasIndex("TutorId", "TransactionKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_bank_transactions_tutor_id_transaction_key");
+
+                    b.HasIndex("TutorId", "StudentId", "BookingDate")
+                        .HasDatabaseName("ix_bank_transactions_tutor_id_student_id_booking_date");
+
+                    b.ToTable("bank_transactions", (string)null);
+                });
+
             modelBuilder.Entity("TutoringManager.Api.Students.Student", b =>
                 {
                     b.Property<Guid>("Id")
@@ -776,6 +902,24 @@ namespace TutoringManager.Api.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_lesson_series_students_student_id");
+                });
+
+            modelBuilder.Entity("TutoringManager.Api.Payments.BankTransaction", b =>
+                {
+                    b.HasOne("TutoringManager.Api.Payments.BankImport", null)
+                        .WithMany()
+                        .HasForeignKey("ImportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_bank_transactions_bank_imports_import_id");
+
+                    b.HasOne("TutoringManager.Api.Students.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_bank_transactions_students_student_id");
+
+                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("TutoringManager.Api.Students.Student", b =>
