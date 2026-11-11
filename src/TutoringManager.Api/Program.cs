@@ -5,6 +5,7 @@ using TutoringManager.Api.Auth;
 using TutoringManager.Api.Emails;
 using TutoringManager.Api.Infrastructure;
 using TutoringManager.Api.Lessons;
+using TutoringManager.Api.Payments;
 using TutoringManager.Api.Students;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,6 +33,9 @@ builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<EmailScheduler>();
 builder.Services.AddScoped<EmailDispatcher>();
+builder.Services.AddSingleton<IBankStatementParser, MBankParser>();
+builder.Services.AddScoped<ImportService>();
+builder.Services.AddScoped<TransactionService>();
 
 if (builder.Configuration.GetValue("Workers:Enabled", true))
 {
@@ -57,6 +61,7 @@ app.MapAuthEndpoints();
 app.MapStudentEndpoints();
 app.MapLessonEndpoints();
 app.MapAttendanceEndpoints();
+app.MapPaymentEndpoints();
 
 await app.MigrateDatabaseAsync();
 app.Run();
