@@ -20,6 +20,7 @@ namespace TutoringManager.Api.Infrastructure.Migrations
                 .HasAnnotation("ProductVersion", "10.0.4")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "btree_gist");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
@@ -277,6 +278,136 @@ namespace TutoringManager.Api.Infrastructure.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("TutoringManager.Api.Lessons.Lesson", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Attendance")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("attendance");
+
+                    b.Property<DateTime?>("AttendanceRespondedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("attendance_responded_at");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("duration_minutes");
+
+                    b.Property<DateTime>("EndUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("end_utc");
+
+                    b.Property<bool>("IsModifiedFromSeries")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_modified_from_series");
+
+                    b.Property<DateOnly>("LocalDate")
+                        .HasColumnType("date")
+                        .HasColumnName("local_date");
+
+                    b.Property<TimeOnly>("LocalStartTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("local_start_time");
+
+                    b.Property<decimal>("PricePerLesson")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("price_per_lesson");
+
+                    b.Property<Guid?>("SeriesId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("series_id");
+
+                    b.Property<DateTime>("StartUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("start_utc");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("student_id");
+
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("time_zone_id");
+
+                    b.Property<Guid>("TutorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tutor_id");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_lessons");
+
+                    b.HasIndex("StudentId")
+                        .HasDatabaseName("ix_lessons_student_id");
+
+                    b.HasIndex("TutorId", "LocalDate")
+                        .HasDatabaseName("ix_lessons_tutor_id_local_date");
+
+                    b.HasIndex("TutorId", "StartUtc")
+                        .HasDatabaseName("ix_lessons_tutor_id_start_utc");
+
+                    b.ToTable("lessons", (string)null);
+                });
+
+            modelBuilder.Entity("TutoringManager.Api.Lessons.LessonNote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("content");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("LessonId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lesson_id");
+
+                    b.Property<Guid>("TutorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tutor_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_lesson_notes");
+
+                    b.HasIndex("LessonId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_lesson_notes_lesson_id");
+
+                    b.ToTable("lesson_notes", (string)null);
+                });
+
             modelBuilder.Entity("TutoringManager.Api.Students.Student", b =>
                 {
                     b.Property<Guid>("Id")
@@ -413,6 +544,28 @@ namespace TutoringManager.Api.Infrastructure.Migrations
                         .HasConstraintName("fk_asp_net_user_tokens_asp_net_users_user_id");
                 });
 
+            modelBuilder.Entity("TutoringManager.Api.Lessons.Lesson", b =>
+                {
+                    b.HasOne("TutoringManager.Api.Students.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_lessons_students_student_id");
+
+                    b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("TutoringManager.Api.Lessons.LessonNote", b =>
+                {
+                    b.HasOne("TutoringManager.Api.Lessons.Lesson", null)
+                        .WithOne("Note")
+                        .HasForeignKey("TutoringManager.Api.Lessons.LessonNote", "LessonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_lesson_notes_lessons_lesson_id");
+                });
+
             modelBuilder.Entity("TutoringManager.Api.Students.Student", b =>
                 {
                     b.HasOne("TutoringManager.Api.Auth.Tutor", null)
@@ -431,6 +584,11 @@ namespace TutoringManager.Api.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_student_bank_accounts_students_student_id");
+                });
+
+            modelBuilder.Entity("TutoringManager.Api.Lessons.Lesson", b =>
+                {
+                    b.Navigation("Note");
                 });
 
             modelBuilder.Entity("TutoringManager.Api.Students.Student", b =>
