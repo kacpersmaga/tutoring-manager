@@ -1,9 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using TutoringManager.Api.Attendance;
 using TutoringManager.Api.Infrastructure;
 
 namespace TutoringManager.Api.Lessons;
 
-public class LessonService(AppDbContext db, CurrentTutor currentTutor, TimeProvider time)
+public class LessonService(AppDbContext db, CurrentTutor currentTutor, AttendanceService attendance, TimeProvider time)
 {
     private const int MaxCalendarDays = 62;
 
@@ -62,6 +63,11 @@ public class LessonService(AppDbContext db, CurrentTutor currentTutor, TimeProvi
 
         await EnsureNoOverlapAsync(lesson);
         await SaveAsync();
+        if (timeChanged)
+        {
+            await attendance.RevokeTokensAsync(lesson.Id);
+        }
+
         return await GetAsync(lesson.Id);
     }
 
@@ -73,6 +79,7 @@ public class LessonService(AppDbContext db, CurrentTutor currentTutor, TimeProvi
         lesson.Status = LessonStatus.Cancelled;
         lesson.IsModifiedFromSeries = lesson.SeriesId is not null;
         await SaveAsync();
+        await attendance.RevokeTokensAsync(lesson.Id);
         return await GetAsync(lesson.Id);
     }
 

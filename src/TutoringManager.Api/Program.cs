@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
+using TutoringManager.Api.Attendance;
 using TutoringManager.Api.Auth;
 using TutoringManager.Api.Infrastructure;
 using TutoringManager.Api.Lessons;
@@ -25,6 +26,7 @@ builder.Services.AddAppRateLimiting(builder.Configuration);
 builder.Services.AddScoped<StudentService>();
 builder.Services.AddScoped<LessonService>();
 builder.Services.AddScoped<SeriesService>();
+builder.Services.AddScoped<AttendanceService>();
 
 if (builder.Configuration.GetValue("Workers:Enabled", true))
 {
@@ -48,6 +50,7 @@ app.MapGet("/health", async (AppDbContext db) =>
 app.MapAuthEndpoints();
 app.MapStudentEndpoints();
 app.MapLessonEndpoints();
+app.MapAttendanceEndpoints();
 
 await app.MigrateDatabaseAsync();
 app.Run();
