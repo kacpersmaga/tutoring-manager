@@ -31,10 +31,14 @@ services:
       mailpit:
         condition: service_started
     environment:
-      ConnectionStrings__Default: "Host=postgres;Port=5432;Database=tutoring;Username=tutoring;Password=tutoring"
+      ConnectionStrings__Default: "Host=postgres;Port=5432;Database=tutoring;Username=tutoring;Password=tutoring;Gss Encryption Mode=Disable"
       Email__SmtpHost: mailpit
       Email__SmtpPort: "1025"
       Email__PublicBaseUrl: "http://localhost:8080"
+      # Local demo only: creates a demo account with realistic data on first start.
+      Demo__Enabled: "true"
+      Demo__Email: "demo@tutoring-manager.local"
+      Demo__Password: "demo-password-2027"
     ports:
       - "8080:8080"
 
