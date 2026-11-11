@@ -38,6 +38,11 @@ dotnet test
 - **Cookie sign-in instead of JWT.** The SPA and the API share one origin, so an HttpOnly cookie is the simplest secure option: JavaScript never sees the session, and there is no refresh-token dance. The price is CSRF, handled with antiforgery tokens (see Security).
 - **Tenant isolation in one place.** Every tutor-owned table has `TutorId` and a global query filter in `AppDbContext`, so a forgotten `Where` cannot leak another tutor's data. Another tutor's resources answer 404, not 403, so their existence is not revealed.
 - **Expected errors as exceptions.** Services throw `ApiException` (404, 409, validation) and one `IExceptionHandler` turns it into ProblemDetails. Endpoints stay one line long and every error has the same shape.
+- **Time: local time + zone is the source of truth.** A lesson stores `LocalDate`, `LocalStartTime` and `TimeZoneId`; `StartUtc`/`EndUtc` are derived on save and used for queries. "Every Tuesday at 17:00" stays at 17:00 after a daylight saving change. A time inside the spring-forward gap is moved forward, the way clocks move.
+- **The database guarantees no overlapping lessons**, not just the code: an exclusion constraint `EXCLUDE USING gist (tutor_id WITH =, tstzrange(start_utc, end_utc) WITH &&) WHERE (status <> 'Cancelled')`. Two concurrent requests cannot both win. The service still checks first, so the user gets a readable 409 ("overlaps with Anna on 2027-01-20 at 17:00").
+- **"Completed" is set by the tutor**, one lesson at a time or with "mark all past lessons as completed". An automatic rule would bill lessons that silently did not happen.
+- **Optimistic concurrency with PostgreSQL's `xmin`**: a lesson edited in two tabs answers 409 instead of silently overwriting, without an extra version column.
+- **Lesson price is copied from the student's rate** when the lesson is created, so changing the rate does not rewrite past invoices.
 - **Bank accounts are stored normalized** (26 digits, no `PL`, no spaces) and checked with the IBAN mod-97 checksum, so a typo is caught when the account is entered, not when a payment fails to match.
 
 ## Security
