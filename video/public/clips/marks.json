@@ -1,0 +1,26 @@
+{
+  "calendar": {
+    "ready": 230,
+    "dialog": 3416,
+    "end": 7244
+  },
+  "email": {
+    "ready": 637,
+    "end": 4148
+  },
+  "phone": {
+    "ready": 199,
+    "tapped": 2043,
+    "end": 4546
+  },
+  "coming": {
+    "ready": 241,
+    "end": 3250
+  },
+  "payments": {
+    "ready": 222,
+    "imported": 1925,
+    "assigned": 5698,
+    "end": 9672
+  }
+}
