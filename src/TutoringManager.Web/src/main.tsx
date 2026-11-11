@@ -1,11 +1,12 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider, RequireAuth } from './auth'
 import { Shell } from './components/Shell'
 import { AccountPage } from './pages/AccountPage'
 import { AttendancePage } from './pages/AttendancePage'
 import { CalendarPage } from './pages/CalendarPage'
+import { LandingPage } from './pages/LandingPage'
 import { LoginPage, RegisterPage } from './pages/AuthPages'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PaymentsPage } from './pages/PaymentsPage'
@@ -18,7 +19,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/app" replace />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/a/:token" element={<AttendancePage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route
