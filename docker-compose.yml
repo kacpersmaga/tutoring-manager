@@ -1,0 +1,39 @@
+name: tutoring-manager
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: tutoring
+      POSTGRES_USER: tutoring
+      POSTGRES_PASSWORD: tutoring
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tutoring -d tutoring"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+  app:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    environment:
+      ConnectionStrings__Default: "Host=postgres;Port=5432;Database=tutoring;Username=tutoring;Password=tutoring"
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres-data:
