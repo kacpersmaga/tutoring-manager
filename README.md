@@ -42,6 +42,7 @@ dotnet test
 - **Recurring lessons are generated rows, not a rule evaluated on the fly.** A series creates real `Lesson` rows 12 weeks ahead and a daily worker tops it up. An exception (moved, cancelled or annotated lesson) is just an edit of that row. Editing the series replaces only future lessons that were not touched individually; each lesson remembers which series date it came from (`SeriesOccurrenceDate`), so a moved lesson never gets a duplicate. Queries stay simple and notes and attendance hang off a concrete row.
 - **The database guarantees no overlapping lessons**, not just the code: an exclusion constraint `EXCLUDE USING gist (tutor_id WITH =, tstzrange(start_utc, end_utc) WITH &&) WHERE (status <> 'Cancelled')`. Two concurrent requests cannot both win. The service still checks first, so the user gets a readable 409 ("overlaps with Anna on 2027-01-20 at 17:00").
 - **"Completed" is set by the tutor**, one lesson at a time or with "mark all past lessons as completed". An automatic rule would bill lessons that silently did not happen.
+- **Attendance links carry a random token, the database only its hash.** 32 bytes from `RandomNumberGenerator`, Base64Url in the URL, SHA-256 in the database: a leaked database dump contains no working links. Moving or cancelling a lesson revokes its links; a link expires when the lesson starts. The page behind the link shows only the date, time and the tutor's name.
 - **Optimistic concurrency with PostgreSQL's `xmin`**: a lesson edited in two tabs answers 409 instead of silently overwriting, without an extra version column.
 - **Lesson price is copied from the student's rate** when the lesson is created, so changing the rate does not rewrite past invoices.
 - **Bank accounts are stored normalized** (26 digits, no `PL`, no spaces) and checked with the IBAN mod-97 checksum, so a typo is caught when the account is entered, not when a payment fails to match.
@@ -52,7 +53,8 @@ dotnet test
 - **Session cookie:** `HttpOnly`, `SameSite=Strict`, `Secure` when `Security__HttpsOnly=true` (production), 7-day sliding expiry.
 - **CSRF:** every state-changing `/api` request must carry an `X-XSRF-TOKEN` header matching the antiforgery cookie (double submit). The token is bound to the signed-in user.
 - **Isolation:** global query filter per tutor, covered by tests that tutor B gets 404 on tutor A's data.
-- **Rate limiting** (built-in ASP.NET Core limiter, per IP): sign-in and registration 10/min.
+- **Rate limiting** (built-in ASP.NET Core limiter, per IP): sign-in and registration 10/min, public attendance endpoints 30/min.
+- **Attendance tokens:** 256 bits of randomness, only the SHA-256 hash stored, expire at lesson start, revoked when the lesson is moved or cancelled. Malformed, unknown and revoked tokens all get the same 404.
 
 
 ## What's deliberately missing
