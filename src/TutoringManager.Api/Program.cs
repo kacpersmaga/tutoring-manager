@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using TutoringManager.Api.Attendance;
 using TutoringManager.Api.Auth;
+using TutoringManager.Api.Emails;
 using TutoringManager.Api.Infrastructure;
 using TutoringManager.Api.Lessons;
 using TutoringManager.Api.Students;
@@ -27,10 +28,15 @@ builder.Services.AddScoped<StudentService>();
 builder.Services.AddScoped<LessonService>();
 builder.Services.AddScoped<SeriesService>();
 builder.Services.AddScoped<AttendanceService>();
+builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+builder.Services.AddScoped<EmailScheduler>();
+builder.Services.AddScoped<EmailDispatcher>();
 
 if (builder.Configuration.GetValue("Workers:Enabled", true))
 {
     builder.Services.AddHostedService<SeriesExtensionWorker>();
+    builder.Services.AddHostedService<EmailWorker>();
 }
 
 var app = builder.Build();

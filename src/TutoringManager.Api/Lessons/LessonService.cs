@@ -1,10 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using TutoringManager.Api.Attendance;
+using TutoringManager.Api.Emails;
 using TutoringManager.Api.Infrastructure;
 
 namespace TutoringManager.Api.Lessons;
 
-public class LessonService(AppDbContext db, CurrentTutor currentTutor, AttendanceService attendance, TimeProvider time)
+public class LessonService(
+    AppDbContext db,
+    CurrentTutor currentTutor,
+    AttendanceService attendance,
+    EmailScheduler emails,
+    TimeProvider time)
 {
     private const int MaxCalendarDays = 62;
 
@@ -41,6 +47,7 @@ public class LessonService(AppDbContext db, CurrentTutor currentTutor, Attendanc
 
         await EnsureNoOverlapAsync(lesson);
         db.Lessons.Add(lesson);
+        emails.ScheduleAttendanceRequest(lesson, student.Email);
         await SaveAsync();
         return await GetAsync(lesson.Id);
     }
@@ -66,6 +73,10 @@ public class LessonService(AppDbContext db, CurrentTutor currentTutor, Attendanc
         if (timeChanged)
         {
             await attendance.RevokeTokensAsync(lesson.Id);
+            await emails.CancelPendingAsync(lesson.Id);
+            var studentEmail = await db.Students.Where(s => s.Id == lesson.StudentId).Select(s => s.Email).SingleAsync();
+            emails.ScheduleAttendanceRequest(lesson, studentEmail);
+            await db.SaveChangesAsync();
         }
 
         return await GetAsync(lesson.Id);
@@ -80,6 +91,7 @@ public class LessonService(AppDbContext db, CurrentTutor currentTutor, Attendanc
         lesson.IsModifiedFromSeries = lesson.SeriesId is not null;
         await SaveAsync();
         await attendance.RevokeTokensAsync(lesson.Id);
+        await emails.CancelPendingAsync(lesson.Id);
         return await GetAsync(lesson.Id);
     }
 
@@ -214,5 +226,6 @@ public class LessonService(AppDbContext db, CurrentTutor currentTutor, Attendanc
             l.Id, l.StudentId, l.Student!.FullName, l.SeriesId,
             l.LocalDate, l.LocalStartTime, l.DurationMinutes, l.StartUtc, l.EndUtc,
             l.Status, l.Attendance, l.AttendanceRespondedAt, l.PricePerLesson, l.IsModifiedFromSeries,
-            l.Note != null ? l.Note.Content : null);
+            l.Note != null ? l.Note.Content : null,
+            l.Emails.OrderByDescending(e => e.SendAtUtc).Select(e => (EmailStatus?)e.Status).FirstOrDefault());
 }

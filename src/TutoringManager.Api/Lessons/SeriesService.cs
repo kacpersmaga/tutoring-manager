@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using TutoringManager.Api.Emails;
 using TutoringManager.Api.Infrastructure;
+using TutoringManager.Api.Students;
 
 namespace TutoringManager.Api.Lessons;
 
@@ -7,6 +9,7 @@ public class SeriesService(
     AppDbContext db,
     CurrentTutor currentTutor,
     LessonService lessons,
+    EmailScheduler emails,
     TimeProvider time,
     ILogger<SeriesService> logger)
 {
@@ -40,7 +43,7 @@ public class SeriesService(
         db.LessonSeries.Add(series);
 
         // Past occurrences are created too, so a tutor can enter a series that has already been running.
-        await GenerateAsync(series, series.StartDate, Horizon(series), student.RatePerLesson, skipConflicts: false, skipPast: false);
+        await GenerateAsync(series, series.StartDate, Horizon(series), student, skipConflicts: false, skipPast: false);
         await db.SaveChangesAsync();
         return ToResponse(series);
     }
@@ -53,7 +56,7 @@ public class SeriesService(
     {
         var series = await FindAsync(id);
         ValidateEndDate(series.StartDate, request.EndDate);
-        var rate = await db.Students.Where(s => s.Id == series.StudentId).Select(s => s.RatePerLesson).SingleAsync();
+        var student = await db.Students.SingleAsync(s => s.Id == series.StudentId);
 
         await using var transaction = await db.Database.BeginTransactionAsync();
 
@@ -66,7 +69,7 @@ public class SeriesService(
         series.DurationMinutes = request.DurationMinutes;
         series.EndDate = request.EndDate;
 
-        await GenerateAsync(series, Today(series), Horizon(series), rate, skipConflicts: false, skipPast: true);
+        await GenerateAsync(series, Today(series), Horizon(series), student, skipConflicts: false, skipPast: true);
         await db.SaveChangesAsync();
         await transaction.CommitAsync();
         return ToResponse(series);
@@ -96,9 +99,8 @@ public class SeriesService(
         var created = 0;
         foreach (var series in due)
         {
-            var rate = await db.Students.IgnoreQueryFilters()
-                .Where(s => s.Id == series.StudentId).Select(s => s.RatePerLesson).SingleAsync();
-            created += await GenerateAsync(series, series.GeneratedUntil.AddDays(1), horizon, rate, skipConflicts: true, skipPast: true);
+            var student = await db.Students.IgnoreQueryFilters().SingleAsync(s => s.Id == series.StudentId);
+            created += await GenerateAsync(series, series.GeneratedUntil.AddDays(1), horizon, student, skipConflicts: true, skipPast: true);
             await db.SaveChangesAsync();
         }
 
@@ -106,7 +108,7 @@ public class SeriesService(
     }
 
     private async Task<int> GenerateAsync(
-        LessonSeries series, DateOnly from, DateOnly horizon, decimal rate, bool skipConflicts, bool skipPast)
+        LessonSeries series, DateOnly from, DateOnly horizon, Student student, bool skipConflicts, bool skipPast)
     {
         var now = time.GetUtcNow().UtcDateTime;
         var existingOccurrences = await db.Lessons.IgnoreQueryFilters()
@@ -128,7 +130,7 @@ public class SeriesService(
                 StudentId = series.StudentId,
                 SeriesId = series.Id,
                 SeriesOccurrenceDate = date,
-                PricePerLesson = rate,
+                PricePerLesson = student.RatePerLesson,
             };
             lesson.SetTime(date, series.StartTime, series.DurationMinutes, series.TimeZoneId);
 
@@ -148,6 +150,7 @@ public class SeriesService(
             }
 
             db.Lessons.Add(lesson);
+            emails.ScheduleAttendanceRequest(lesson, student.Email);
             created++;
         }
 

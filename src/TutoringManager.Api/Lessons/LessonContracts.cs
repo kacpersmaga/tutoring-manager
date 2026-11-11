@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using TutoringManager.Api.Emails;
 
 namespace TutoringManager.Api.Lessons;
 
@@ -30,7 +31,8 @@ public record LessonResponse(
     DateTime? AttendanceRespondedAt,
     decimal PricePerLesson,
     bool IsModifiedFromSeries,
-    string? Note);
+    string? Note,
+    EmailStatus? EmailStatus);
 
 public record StudentNoteResponse(Guid LessonId, DateOnly Date, TimeOnly StartTime, string Content, DateTime UpdatedAt);
 

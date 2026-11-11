@@ -32,6 +32,9 @@ services:
         condition: service_started
     environment:
       ConnectionStrings__Default: "Host=postgres;Port=5432;Database=tutoring;Username=tutoring;Password=tutoring"
+      Email__SmtpHost: mailpit
+      Email__SmtpPort: "1025"
+      Email__PublicBaseUrl: "http://localhost:8080"
     ports:
       - "8080:8080"
 
