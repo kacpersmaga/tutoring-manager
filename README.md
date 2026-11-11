@@ -1,36 +1,76 @@
-# Tutoring Manager
+<p align="center">
+  <img src="src/TutoringManager.Web/public/favicon.svg" width="64" height="64" alt="">
+</p>
 
-Students, lesson notes, a calendar with recurring lessons, attendance confirmation by email and bank-statement reconciliation for private tutors.
+<h1 align="center">Tutoring Manager</h1>
 
+<p align="center"><strong>Every lesson confirmed. Every złoty matched.</strong><br>
+Weekly lessons, notes, attendance links and bank-statement matching for private tutors.</p>
+
+<p align="center">
+  <a href="https://github.com/kacpersmaga/tutoring-manager/actions/workflows/ci.yml"><img src="https://github.com/kacpersmaga/tutoring-manager/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/.NET-10-512BD4" alt=".NET 10">
+  <img src="https://img.shields.io/badge/PostgreSQL-16-336791" alt="PostgreSQL 16">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT licence"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/kacpersmaga/tutoring-manager/releases/download/v0.1.0/tutoring-manager-demo.mp4"><strong>▶ Watch the 60-second demo</strong></a>
+  &nbsp;&nbsp;|&nbsp;&nbsp;
+  <a href="#run-it-in-2-minutes"><strong>Run it in 2 minutes</strong></a>
+</p>
+
+<p align="center"><img src="docs/images/demo.gif" width="800" alt="A lesson card, the student tapping “I’ll be there” on a phone, the card turning to “Coming”, and a bank statement being imported"></p>
 
 ## The problem
 
-A private tutor juggles a weekly schedule, notes for each student, "is she coming tomorrow?" messages and a bank account full of transfers that need to be matched to lessons. Spreadsheets and a phone calendar get out of sync quickly.
+A private tutor ends every evening with the same three questions: is Ola coming tomorrow, what did we cover last time, and who has paid for October. The answers live in text messages, a paper notebook and a banking app. Tutoring Manager puts them on one desk.
 
-## Run locally
+## What it does
 
-Requirements: Docker.
+### The week, with every answer on it
 
-```bash
-docker compose up --build
+Weekly lessons are planned twelve weeks ahead and keep their local hour across clock changes. Each lesson shows at a glance whether the student is coming, has declined, has been asked, or whether the email failed.
+
+<img src="docs/images/calendar.jpg" width="900" alt="The weekly calendar">
+
+### One tap from the student, no account
+
+Twenty-four hours before a lesson the student gets an email with a link. One tap answers; the tutor sees it in the calendar. The link closes when the lesson starts and stops working if the lesson moves.
+
+<img src="docs/images/attendance-phone.jpg" width="300" alt="The attendance page on a phone">
+
+### Notes and money per student
+
+Each lesson keeps one note, listed newest first on the student's page. Import the bank's CSV statement and transfers match students by account number; the monthly report shows what is due, what was paid and the running balance.
+
+<img src="docs/images/payments.jpg" width="900" alt="The monthly payments report">
+
+## How it works
+
+```mermaid
+flowchart LR
+    Tutor["Tutor's browser"] -->|"cookie session + antiforgery"| App
+    Student["Student's phone"] -->|"/a/token"| App
+    subgraph App["ASP.NET Core app, one container"]
+        API["Minimal APIs + React build"]
+        Worker["Email worker"]
+        Series["Series worker, daily"]
+    end
+    API --> DB[("PostgreSQL 16")]
+    Worker -->|"FOR UPDATE SKIP LOCKED"| DB
+    Series --> DB
+    Worker -->|SMTP| Mail["Mailpit locally, any SMTP in production"]
+    Mail -->|"email with the link"| Student
 ```
 
-The first start creates the database and a demo account with two months of realistic data. The console prints the address, the demo login and the Mailpit address. On the sign-in page, **Open the demo account** signs you straight in; **Reset demo** in the top bar puts the data back to its starting state, dated from today.
+## Engineering highlights
 
-| What | Where |
-| --- | --- |
-| App | http://localhost:8080 |
-| Demo account | `demo@tutoring-manager.local` / `demo-password-2027` (local demo mode only) |
-| Mailpit (all outgoing email, including attendance links) | http://localhost:8025 |
-| Health check | http://localhost:8080/health |
-
-## Tests
-
-Requirements: .NET 10 SDK and Docker (integration tests start a real PostgreSQL with Testcontainers).
-
-```bash
-dotnet test
-```
+- **Emails on several servers, each sent once (or, after a crash, honestly twice).** The queue is a table written in the same transaction as the lesson. Workers claim batches with `FOR UPDATE SKIP LOCKED` and a 5-minute lease, retry with backoff and give up after five attempts. [Dispatcher](src/TutoringManager.Api/Emails/EmailDispatcher.cs), [tests: parallel workers, a crashed worker's lease](tests/TutoringManager.Tests/EmailTests.cs)
+- **No double booking, guaranteed by the database.** An exclusion constraint on `tstzrange(start_utc, end_utc)` per tutor; five concurrent requests for one slot create exactly one lesson. [Migration](src/TutoringManager.Api/Infrastructure/Migrations/20261111230213_AddLessonsAndNotes.cs), [test](tests/TutoringManager.Tests/LessonTests.cs)
+- **Attendance links that leak nothing.** 256 random bits in the URL, only the SHA-256 hash in the database, expiry at lesson start, revocation on move or cancel, `Referrer-Policy: no-referrer`. [Token](src/TutoringManager.Api/Attendance/AttendanceToken.cs), [tests](tests/TutoringManager.Tests/AttendanceTests.cs)
+- **A running balance instead of "paid for this month?".** Prepayments, late payments, one transfer for two months and rate changes need no special rules. [Report](src/TutoringManager.Api/Payments/ReportService.cs), [tests](tests/TutoringManager.Tests/Payments/ReportTests.cs)
+- **17:00 stays 17:00 when the clocks change.** Local time and zone are the source of truth; UTC is derived. [LessonTime](src/TutoringManager.Api/Lessons/LessonTime.cs), [tests across 29 March and 25 October](tests/TutoringManager.Tests/LessonTimeTests.cs)
 
 ## Design decisions
 
@@ -78,6 +118,49 @@ dotnet test
 - **Privacy and erasure:** a short privacy page (`/privacy`); deleting a student erases their data, deleting the account (password required) erases everything. Students may be under 18, so only a name, an email and payment accounts are stored.
 
 
+## What's deliberately missing
+
+Queues, Redis, microservices, Kubernetes, CQRS, student accounts, online payments, SMS, a mobile app. Each would add moving parts without solving a problem this product has today.
+
+## Run it in 2 minutes
+
+Requirements: Docker.
+
+```bash
+docker compose up --build
+```
+
+The first start creates the database and a demo account with two months of realistic data. The console prints the address, the demo login and the Mailpit address. On the sign-in page, **Open the demo account** signs you straight in; **Reset demo** in the top bar puts the data back to its starting state, dated from today.
+
+| What | Where |
+| --- | --- |
+| App | http://localhost:8080 |
+| Demo account | `demo@tutoring-manager.local` / `demo-password-2027` (local demo mode only) |
+| Mailpit (all outgoing email, including attendance links) | http://localhost:8025 |
+| Health check | http://localhost:8080/health |
+
+## Tests
+
+Requirements: .NET 10 SDK and Docker (integration tests start a real PostgreSQL with Testcontainers).
+
+```bash
+dotnet test
+```
+
+### Screenshots, GIF and film
+
+Everything visual in this README is generated from the running demo, so it can be refreshed after any UI change:
+
+```bash
+cd scripts/screenshots && npm install && npx playwright install chromium
+npm run screenshots        # docs/images/*.jpg and the landing page's product shots
+node social-images.mjs     # Open Graph image and the repository's social preview
+npm run record             # flow clips for the film (needs a fresh demo: docker compose down -v && docker compose up)
+cd ../../video && npm install
+npx remotion render DemoFilm out/tutoring-manager-demo.mp4
+npx remotion render ReadmeGif out/demo.gif --codec=gif
+```
+
 ## Deployment
 
 The project is not hosted; it runs locally with one command. To run it in production, build the same image and set:
@@ -92,10 +175,6 @@ The project is not hosted; it runs locally with one command. To run it in produc
 | `Demo__Enabled` | leave unset (false) |
 
 Put TLS in front (a reverse proxy or the platform's ingress). Migrations run on startup, which suits one instance; with several, run them as a release step. The email worker is already safe to run on several instances.
-
-## What's deliberately missing
-
-Queues, Redis, microservices, Kubernetes, CQRS, student accounts, online payments, SMS, a mobile app. Each would add moving parts without solving a problem this product has today.
 
 ## Roadmap
 
