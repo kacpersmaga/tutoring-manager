@@ -15,9 +15,12 @@ Requirements: Docker.
 docker compose up --build
 ```
 
+The first start creates the database and a demo account with two months of realistic data. The console prints the address, the demo login and the Mailpit address. On the sign-in page, **Open the demo account** signs you straight in; **Reset demo** in the top bar puts the data back to its starting state, dated from today.
+
 | What | Where |
 | --- | --- |
 | App | http://localhost:8080 |
+| Demo account | `demo@tutoring-manager.local` / `demo-password-2027` (local demo mode only) |
 | Mailpit (all outgoing email, including attendance links) | http://localhost:8025 |
 | Health check | http://localhost:8080/health |
 
@@ -33,6 +36,8 @@ dotnet test
 
 - **One API project, folders per feature** (`Auth/`, `Students/`, `Lessons/`, ...). Minimal APIs with plain services. No MediatR, CQRS, AutoMapper or repository wrappers around EF Core: at this size they add indirection without removing any complexity.
 - **PostgreSQL with snake_case names** (`EFCore.NamingConventions`). Column names match PostgreSQL conventions, so the raw SQL used in a few places (exclusion constraint, email queue) reads naturally.
+- **Demo data is generated relative to today** by `DemoSeeder`, only when `Demo__Enabled=true` (set in `docker-compose.yml`), so the demo never looks stale and production never gets a demo account.
+- **Data protection keys live in PostgreSQL** (`PersistKeysToDbContext`), so sign-ins survive a container restart and several instances can read each other's cookies.
 - **Migrations run on startup** (`Database.MigrateAsync`). Simplest option for a single instance run locally. With several instances you would run them as a separate deployment step.
 - **Tests use a real PostgreSQL** (Testcontainers) instead of the in-memory provider, because key guarantees live in the database (constraints, `FOR UPDATE SKIP LOCKED`).
 - **Cookie sign-in instead of JWT.** The SPA and the API share one origin, so an HttpOnly cookie is the simplest secure option: JavaScript never sees the session, and there is no refresh-token dance. The price is CSRF, handled with antiforgery tokens (see Security).
@@ -65,6 +70,28 @@ dotnet test
 - **CSV import:** max 1 MB, `.csv` only, parsed into typed values (dates, decimals, digits-only account numbers); nothing from the file is executed or rendered as HTML.
 - **Attendance tokens:** 256 bits of randomness, only the SHA-256 hash stored, expire at lesson start, revoked when the lesson is moved or cancelled. Malformed, unknown and revoked tokens all get the same 404.
 
+- **HTTPS:** with `Security__HttpsOnly=true` the app redirects to HTTPS, sends HSTS and marks cookies `Secure`. Locally it runs on plain HTTP.
+- **Headers:** `Content-Security-Policy` (scripts from self only, no framing, no plugins), `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer` (the attendance token sits in the URL and must never leak in a Referer), `Permissions-Policy`.
+- **Logs** carry ids and counts, never names, email addresses, tokens or note contents. Request paths (which contain attendance tokens) are not logged at the default level; SMTP failures log the exception type only.
+- **Secrets** never live in the repository. The only credentials in it are the local demo account and the local database password in `docker-compose.yml`, both for a machine-local demo.
+- **Dependencies:** Dependabot for NuGet, npm and GitHub Actions; NuGet audit fails the build on known vulnerabilities (warnings are errors).
+- **Privacy and erasure:** a short privacy page (`/privacy`); deleting a student erases their data, deleting the account (password required) erases everything. Students may be under 18, so only a name, an email and payment accounts are stored.
+
+
+## Deployment
+
+The project is not hosted; it runs locally with one command. To run it in production, build the same image and set:
+
+| Variable | Purpose |
+| --- | --- |
+| `ConnectionStrings__Default` | PostgreSQL 16 connection string |
+| `Email__SmtpHost`, `Email__SmtpPort`, `Email__SmtpUseStartTls`, `Email__SmtpUsername`, `Email__SmtpPassword` | any SMTP server or transactional email provider |
+| `Email__FromAddress`, `Email__FromName` | the sender of attendance emails |
+| `Email__PublicBaseUrl` | the public address, used in attendance links |
+| `Security__HttpsOnly=true` | HTTPS redirect, HSTS, `Secure` cookies |
+| `Demo__Enabled` | leave unset (false) |
+
+Put TLS in front (a reverse proxy or the platform's ingress). Migrations run on startup, which suits one instance; with several, run them as a release step. The email worker is already safe to run on several instances.
 
 ## What's deliberately missing
 
