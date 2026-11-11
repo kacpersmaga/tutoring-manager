@@ -182,11 +182,12 @@ public class DemoSeeder(
                         AddEmail(lesson, cast.Email, EmailStatus.Sent, now);
                         break;
                     case 2:
-                        AddEmail(lesson, cast.Email, EmailStatus.Sent, now);
+                        // Due right away on purpose: the worker sends it to Mailpit seconds after start,
+                        // so the demo has a real email with a working link.
+                        AddEmail(lesson, cast.Email, EmailStatus.Pending, now, sendNow: true);
                         break;
                     default:
-                        // Left pending on purpose: the worker sends it to Mailpit a few seconds after start.
-                        AddEmail(lesson, cast.Email, EmailStatus.Pending, now);
+                        AddEmail(lesson, cast.Email, EmailStatus.Sent, now);
                         break;
                 }
             }
@@ -203,9 +204,9 @@ public class DemoSeeder(
         lesson.AttendanceRespondedAt = now.AddHours(-2);
     }
 
-    private void AddEmail(Lesson lesson, string to, EmailStatus status, DateTime now)
+    private void AddEmail(Lesson lesson, string to, EmailStatus status, DateTime now, bool sendNow = false)
     {
-        var sendAt = lesson.StartUtc.AddHours(-24) < now && status == EmailStatus.Pending ? now : lesson.StartUtc.AddHours(-24);
+        var sendAt = sendNow || (status == EmailStatus.Pending && lesson.StartUtc.AddHours(-24) < now) ? now : lesson.StartUtc.AddHours(-24);
         db.ScheduledEmails.Add(new ScheduledEmail
         {
             TutorId = lesson.TutorId,
