@@ -46,6 +46,8 @@ dotnet test
 - **The email queue is a table, not a message broker.** `ScheduledEmails` rows are written in the same transaction as the lesson, so a lesson can never exist without its email (no dual-write problem). A `BackgroundService` polls every 30 s and claims a batch with `UPDATE … WHERE id IN (SELECT … FOR UPDATE SKIP LOCKED) RETURNING *`: several app instances never take the same row, and none waits for another. A claimed row is leased for 5 minutes; if the instance dies, the lease expires and another instance takes over. That makes delivery **at-least-once**: a crash after the SMTP server accepted the email but before the row was marked as sent means the student gets it twice. Exactly-once delivery over SMTP does not exist; a duplicate reminder is harmless.
 - **Retries with backoff:** 1, 5, 25 and 60 minutes; after 5 attempts the email is `Failed` and the tutor sees it on the lesson.
 - **When to send:** 24 hours before the lesson, or right away if the lesson is sooner. Moving a lesson cancels the pending email and queues a new one; cancelling a lesson cancels it. The attendance token is created when the email is sent, so the raw token never sits in the database.
+- **Bank statements: one parser per bank** behind `IBankStatementParser` (`CanParse`, `Parse`). The first one reads mBank's CSV export: Windows-1250 or UTF-8 (valid UTF-8 wins), semicolons, decimal commas, columns found by name. Only income is imported. A file is identified by its SHA-256, so the same file cannot be imported twice. A transfer is identified by a hash of date, amount, sender account, title and its position among identical transfers in the file, so overlapping statements do not double-count, while two genuine identical payments on one day stay two.
+- **Matching by sender account.** Transfers from an account saved on a student are assigned automatically. A transfer from a parent's account is assigned by hand once, with "remember this account", and from then on matched automatically.
 - **Optimistic concurrency with PostgreSQL's `xmin`**: a lesson edited in two tabs answers 409 instead of silently overwriting, without an extra version column.
 - **Lesson price is copied from the student's rate** when the lesson is created, so changing the rate does not rewrite past invoices.
 - **Bank accounts are stored normalized** (26 digits, no `PL`, no spaces) and checked with the IBAN mod-97 checksum, so a typo is caught when the account is entered, not when a payment fails to match.
@@ -57,6 +59,7 @@ dotnet test
 - **CSRF:** every state-changing `/api` request must carry an `X-XSRF-TOKEN` header matching the antiforgery cookie (double submit). The token is bound to the signed-in user.
 - **Isolation:** global query filter per tutor, covered by tests that tutor B gets 404 on tutor A's data.
 - **Rate limiting** (built-in ASP.NET Core limiter, per IP): sign-in and registration 10/min, public attendance endpoints 30/min.
+- **CSV import:** max 1 MB, `.csv` only, parsed into typed values (dates, decimals, digits-only account numbers); nothing from the file is executed or rendered as HTML.
 - **Attendance tokens:** 256 bits of randomness, only the SHA-256 hash stored, expire at lesson start, revoked when the lesson is moved or cancelled. Malformed, unknown and revoked tokens all get the same 404.
 
 
