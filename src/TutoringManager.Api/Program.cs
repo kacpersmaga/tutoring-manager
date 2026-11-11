@@ -36,6 +36,7 @@ builder.Services.AddScoped<EmailDispatcher>();
 builder.Services.AddSingleton<IBankStatementParser, MBankParser>();
 builder.Services.AddScoped<ImportService>();
 builder.Services.AddScoped<TransactionService>();
+builder.Services.AddScoped<ReportService>();
 
 if (builder.Configuration.GetValue("Workers:Enabled", true))
 {

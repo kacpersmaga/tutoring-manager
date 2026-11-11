@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TutoringManager.Api.Infrastructure;
+using TutoringManager.Api.Lessons;
 
 namespace TutoringManager.Api.Students;
 
@@ -9,10 +10,18 @@ public class StudentService(AppDbContext db, CurrentTutor currentTutor, TimeProv
         await db.Students
             .Where(s => includeInactive || s.IsActive)
             .OrderBy(s => s.FullName)
-            .Select(s => new StudentSummary(s.Id, s.FullName, s.Email, s.RatePerLesson, s.IsActive))
+            .Select(s => new StudentSummary(s.Id, s.FullName, s.Email, s.RatePerLesson, s.IsActive,
+                db.BankTransactions.Where(t => t.StudentId == s.Id).Sum(t => t.Amount)
+                - db.Lessons.Where(l => l.StudentId == s.Id && l.Status == LessonStatus.Completed).Sum(l => l.PricePerLesson)))
             .ToListAsync();
 
-    public async Task<StudentDetails> GetAsync(Guid id) => ToDetails(await FindAsync(id));
+    public async Task<StudentDetails> GetAsync(Guid id)
+    {
+        var student = await FindAsync(id);
+        var paid = await db.BankTransactions.Where(t => t.StudentId == id).SumAsync(t => t.Amount);
+        var due = await db.Lessons.Where(l => l.StudentId == id && l.Status == LessonStatus.Completed).SumAsync(l => l.PricePerLesson);
+        return ToDetails(student, paid - due);
+    }
 
     public async Task<StudentDetails> CreateAsync(CreateStudentRequest request)
     {
@@ -36,7 +45,7 @@ public class StudentService(AppDbContext db, CurrentTutor currentTutor, TimeProv
 
         db.Students.Add(student);
         await db.SaveChangesAsync();
-        return ToDetails(student);
+        return ToDetails(student, balance: 0);
     }
 
     public async Task<StudentDetails> UpdateAsync(Guid id, UpdateStudentRequest request)
@@ -47,7 +56,7 @@ public class StudentService(AppDbContext db, CurrentTutor currentTutor, TimeProv
         student.RatePerLesson = request.RatePerLesson;
         student.IsActive = request.IsActive;
         await db.SaveChangesAsync();
-        return ToDetails(student);
+        return await GetAsync(id);
     }
 
     /// <summary>
@@ -104,7 +113,7 @@ public class StudentService(AppDbContext db, CurrentTutor currentTutor, TimeProv
         return number;
     }
 
-    private static StudentDetails ToDetails(Student s) => new(
-        s.Id, s.FullName, s.Email, s.RatePerLesson, s.IsActive, s.CreatedAt,
+    private static StudentDetails ToDetails(Student s, decimal balance) => new(
+        s.Id, s.FullName, s.Email, s.RatePerLesson, s.IsActive, s.CreatedAt, balance,
         s.BankAccounts.OrderBy(a => a.AccountNumber).Select(a => new BankAccountResponse(a.Id, a.AccountNumber)).ToList());
 }

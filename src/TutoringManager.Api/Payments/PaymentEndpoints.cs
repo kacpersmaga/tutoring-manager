@@ -10,6 +10,7 @@ public static class PaymentEndpoints
             // Antiforgery is checked by UseApiAntiforgery for every /api write, form uploads included.
             .DisableAntiforgery()
             .WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(2 * ImportService.MaxFileBytes));
+        group.MapGet("/report", (string month, ReportService reports) => reports.GetMonthlyAsync(month));
         group.MapGet("/unmatched", (TransactionService transactions) => transactions.GetUnmatchedAsync());
         group.MapPost("/transactions/{id:guid}/assign", (Guid id, AssignTransactionRequest request, TransactionService transactions) =>
             transactions.AssignAsync(id, request));

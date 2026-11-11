@@ -16,7 +16,8 @@ public record UpdateStudentRequest(
 
 public record AddBankAccountRequest([property: Required, MaxLength(40)] string AccountNumber);
 
-public record StudentSummary(Guid Id, string FullName, string Email, decimal RatePerLesson, bool IsActive);
+/// <summary><see cref="Balance"/> = all payments − all completed lessons; negative means the student owes money.</summary>
+public record StudentSummary(Guid Id, string FullName, string Email, decimal RatePerLesson, bool IsActive, decimal Balance);
 
 public record BankAccountResponse(Guid Id, string AccountNumber);
 
@@ -27,4 +28,5 @@ public record StudentDetails(
     decimal RatePerLesson,
     bool IsActive,
     DateTime CreatedAt,
+    decimal Balance,
     List<BankAccountResponse> BankAccounts);
