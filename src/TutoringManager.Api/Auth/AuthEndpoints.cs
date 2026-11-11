@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using TutoringManager.Api.Demo;
 using TutoringManager.Api.Infrastructure;
 
 namespace TutoringManager.Api.Auth;
@@ -14,10 +16,11 @@ public static class AuthEndpoints
         group.MapPost("/logout", Logout);
         group.MapGet("/me", Me).RequireAuthorization();
         group.MapGet("/antiforgery", IssueAntiforgeryToken);
+        group.MapPost("/delete-account", DeleteAccount).RequireAuthorization().RequireRateLimiting(RateLimiting.Auth);
     }
 
     private static async Task<IResult> Register(
-        RegisterRequest request, UserManager<Tutor> users, SignInManager<Tutor> signIn)
+        RegisterRequest request, UserManager<Tutor> users, SignInManager<Tutor> signIn, DemoSeeder demo)
     {
         var tutor = new Tutor
         {
@@ -36,11 +39,11 @@ public static class AuthEndpoints
         }
 
         await signIn.SignInAsync(tutor, isPersistent: true);
-        return Results.Ok(ToMe(tutor));
+        return Results.Ok(ToMe(tutor, demo));
     }
 
     private static async Task<IResult> Login(
-        LoginRequest request, UserManager<Tutor> users, SignInManager<Tutor> signIn)
+        LoginRequest request, UserManager<Tutor> users, SignInManager<Tutor> signIn, DemoSeeder demo)
     {
         var tutor = await users.FindByEmailAsync(request.Email.Trim());
         if (tutor is null)
@@ -57,7 +60,7 @@ public static class AuthEndpoints
                 statusCode: StatusCodes.Status423Locked);
         }
 
-        return result.Succeeded ? Results.Ok(ToMe(tutor)) : InvalidCredentials();
+        return result.Succeeded ? Results.Ok(ToMe(tutor, demo)) : InvalidCredentials();
     }
 
     private static async Task<IResult> Logout(SignInManager<Tutor> signIn)
@@ -66,10 +69,39 @@ public static class AuthEndpoints
         return Results.NoContent();
     }
 
-    private static async Task<IResult> Me(HttpContext context, UserManager<Tutor> users)
+    private static async Task<IResult> Me(HttpContext context, UserManager<Tutor> users, DemoSeeder demo)
     {
         var tutor = await users.GetUserAsync(context.User);
-        return tutor is null ? Results.Unauthorized() : Results.Ok(ToMe(tutor));
+        return tutor is null ? Results.Unauthorized() : Results.Ok(ToMe(tutor, demo));
+    }
+
+    /// <summary>
+    /// GDPR erasure of the whole account: students (with their lessons, notes, series, tokens, emails and accounts
+    /// by cascade), imported statements and the sign-in itself. Asks for the password again.
+    /// </summary>
+    private static async Task<IResult> DeleteAccount(
+        DeleteAccountRequest request, HttpContext context, UserManager<Tutor> users, SignInManager<Tutor> signIn, AppDbContext db)
+    {
+        var tutor = await users.GetUserAsync(context.User);
+        if (tutor is null)
+        {
+            return Results.Unauthorized();
+        }
+
+        if (!await users.CheckPasswordAsync(tutor, request.Password))
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]> { ["password"] = ["The password is not correct."] });
+        }
+
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        await db.BankTransactions.Where(t => t.TutorId == tutor.Id).ExecuteDeleteAsync();
+        await db.BankImports.Where(i => i.TutorId == tutor.Id).ExecuteDeleteAsync();
+        await db.Students.Where(s => s.TutorId == tutor.Id).ExecuteDeleteAsync();
+        await users.DeleteAsync(tutor);
+        await transaction.CommitAsync();
+
+        await signIn.SignOutAsync();
+        return Results.NoContent();
     }
 
     private static IResult IssueAntiforgeryToken(HttpContext context)
@@ -81,5 +113,6 @@ public static class AuthEndpoints
     private static IResult InvalidCredentials() =>
         Results.Problem(title: "Invalid email or password.", statusCode: StatusCodes.Status401Unauthorized);
 
-    private static MeResponse ToMe(Tutor tutor) => new(tutor.Email!, tutor.DisplayName, tutor.TimeZoneId);
+    private static MeResponse ToMe(Tutor tutor, DemoSeeder demo) =>
+        new(tutor.Email!, tutor.DisplayName, tutor.TimeZoneId, demo.IsDemoTutor(tutor));
 }
