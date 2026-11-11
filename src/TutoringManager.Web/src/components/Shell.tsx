@@ -1,9 +1,19 @@
+import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { api } from '../api'
 import { useAuth } from '../auth'
 
 export function Shell() {
   const { me, signOut } = useAuth()
   const navigate = useNavigate()
+  const [resetting, setResetting] = useState(false)
+
+  async function resetDemo() {
+    if (!window.confirm('Put the demo account back to its starting state? Your changes in it are lost.')) return
+    setResetting(true)
+    await api.post('/api/demo/reset')
+    window.location.assign('/app')
+  }
 
   return (
     <div className="shell">
@@ -23,7 +33,12 @@ export function Shell() {
             <NavLink to="/app/payments">Payments</NavLink>
           </nav>
           <div className="topbar__account">
-            <span className="topbar__name">{me?.displayName}</span>
+            <NavLink to="/app/account" className="topbar__name">{me?.displayName}</NavLink>
+            {me?.isDemo && (
+              <button type="button" className="btn btn--text" onClick={resetDemo} aria-busy={resetting} disabled={resetting}>
+                {resetting ? 'Resetting…' : 'Reset demo'}
+              </button>
+            )}
             <button
               type="button"
               className="btn btn--text"

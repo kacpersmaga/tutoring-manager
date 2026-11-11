@@ -135,7 +135,10 @@
 .topnav a:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 .topnav a[aria-current="page"] { background: var(--color-paper-3); color: var(--color-ink); }
 .topbar__account { display: flex; align-items: center; gap: var(--space-xs); margin-left: auto; font-size: var(--text-sm); }
-.topbar__name { color: var(--color-muted); }
+.topbar__name { color: var(--color-muted); text-decoration: none; padding: var(--space-2xs) var(--space-xs); border-radius: var(--radius-input); }
+@media (hover: hover) { .topbar__name:hover { color: var(--color-ink); } }
+.topbar__name:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.topbar__name[aria-current="page"] { color: var(--color-ink); }
 
 .main { max-width: var(--app-max); margin-inline: auto; padding: var(--space-xl) var(--space-lg) var(--space-3xl); }
 
@@ -283,7 +286,6 @@
 .lesson-card .fc-event-main { padding: 0; color: var(--color-print); }
 .lesson-card__content { display: flex; flex-wrap: wrap; align-content: flex-start; gap: var(--space-3xs) var(--space-xs); height: 100%; padding: var(--space-2xs) var(--space-xs); }
 .lesson-card__name { width: 100%; font-weight: 600; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.lesson-card__time { font-family: var(--font-figure); font-size: var(--text-xs); color: var(--color-muted); }
 .lesson--done.fc-event { background-image: none; background-color: var(--color-paper-3); box-shadow: none; }
 .lesson--done .lesson-card__name { font-weight: 500; color: var(--color-ink-2); }
 .lesson--cancelled.fc-event { background-image: none; background-color: transparent; box-shadow: inset 0 0 0 1px var(--color-rule-2); }
@@ -349,6 +351,21 @@
 .auth__sheet { width: min(26rem, 100%); display: grid; gap: var(--space-lg); padding: var(--space-xl); }
 .auth__sheet h1 { font-size: var(--text-2xl); }
 .auth__switch { font-size: var(--text-sm); color: var(--color-muted); }
+.auth__privacy { font-size: var(--text-sm); color: var(--color-muted); }
+
+.page--narrow { max-width: 40rem; }
+.form--narrow { max-width: 22rem; }
+
+/* ---------- Prose pages (privacy) ---------- */
+
+.prose-page { max-width: 44rem; margin-inline: auto; padding: var(--space-xl) var(--space-lg) var(--space-3xl); display: grid; gap: var(--space-xl); }
+.prose { display: grid; gap: var(--space-md); line-height: 1.7; }
+.prose h1 { font-size: var(--text-3xl); }
+.prose h2 { font-size: var(--text-lg); margin-top: var(--space-md); }
+.prose p { max-width: 68ch; }
+.prose__list { display: grid; gap: var(--space-xs); margin: 0; }
+.prose__list dt { font-weight: 600; }
+.prose__list dd { margin: 0 0 var(--space-xs); max-width: 68ch; }
 
 .attend__card { width: min(26rem, 100%); display: grid; gap: var(--space-lg); padding: var(--space-xl) var(--space-lg); }
 .attend__card h1 { font-size: var(--text-2xl); }

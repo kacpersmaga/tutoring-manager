@@ -6,7 +6,7 @@ export type EmailStatus = 'Pending' | 'Processing' | 'Sent' | 'Failed' | 'Cancel
 export type DayOfWeek = 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday'
 export type MatchedBy = 'None' | 'Account' | 'Manual'
 
-export interface Me { email: string; displayName: string; timeZoneId: string }
+export interface Me { email: string; displayName: string; timeZoneId: string; isDemo: boolean }
 
 export interface StudentSummary {
   id: string; fullName: string; email: string; ratePerLesson: number; isActive: boolean; balance: number

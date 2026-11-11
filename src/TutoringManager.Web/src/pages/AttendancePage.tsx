@@ -77,7 +77,9 @@ export function AttendancePage() {
           </>
         )}
       </section>
-      <p className="attend__foot muted">Sent with Tutoring Manager</p>
+      <p className="attend__foot muted">
+        Sent with Tutoring Manager. <a href="/privacy">Privacy</a>
+      </p>
     </main>
   )
 }

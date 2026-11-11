@@ -23,9 +23,8 @@ function renderLesson(arg: EventContentArg) {
   const lesson = arg.event.extendedProps.lesson as Lesson
   const tag = lessonTag(lesson)
   return (
-    <div className="lesson-card__content">
+    <div className="lesson-card__content" title={`${lesson.studentName}, ${formatTime(lesson.startTime)}`}>
       <span className="lesson-card__name">{lesson.studentName}</span>
-      <span className="lesson-card__time">{formatTime(lesson.startTime)}</span>
       {tag && <span className={`tag tag--${tag.tone}`}>{tag.label}</span>}
     </div>
   )
@@ -56,6 +55,9 @@ export function CalendarPage() {
   )
 
   const openLesson = lessons.data?.find((l) => l.id === openLessonId) ?? null
+
+  // Show the day from an hour before the week's first lesson (afternoons by default), so there is no empty morning to scroll past.
+  const firstHour = Math.max(7, Math.min(13, ...(lessons.data ?? []).map((l) => Number(l.startTime.slice(0, 2)) - 1)))
 
   async function move(arg: EventDropArg | EventResizeDoneArg) {
     const start = arg.event.start!
@@ -116,15 +118,13 @@ export function CalendarPage() {
           headerToolbar={{ left: 'title', center: '', right: 'today prev,next' }}
           buttonText={{ today: 'This week' }}
           allDaySlot={false}
-          slotMinTime="07:00:00"
+          slotMinTime={`${String(firstHour).padStart(2, '0')}:00:00`}
           slotMaxTime="22:00:00"
-          scrollTime="14:00:00"
           slotDuration="00:30:00"
           slotLabelFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
           dayHeaderFormat={{ weekday: 'short', day: 'numeric' }}
           nowIndicator
           height="auto"
-          expandRows
           events={events}
           eventContent={renderLesson}
           eventClick={(arg: EventClickArg) => setOpenLessonId(arg.event.id)}

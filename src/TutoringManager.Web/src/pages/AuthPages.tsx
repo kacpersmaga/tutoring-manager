@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { ApiError } from '../api'
+import { api, ApiError } from '../api'
 import { useAuth } from '../auth'
 import { Field } from '../components/Field'
 import { FormError } from '../components/States'
@@ -15,6 +15,7 @@ function AuthLayout({ title, children }: { title: string; children: React.ReactN
         <h1 id="auth-title">{title}</h1>
         {children}
       </section>
+      <Link to="/privacy" className="auth__privacy">Privacy</Link>
     </main>
   )
 }
@@ -25,16 +26,19 @@ export function LoginPage() {
   const location = useLocation()
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [demo, setDemo] = useState<{ email: string; password: string } | null>(null)
+
+  useEffect(() => {
+    api.get<{ email: string; password: string }>('/api/demo').then(setDemo).catch(() => setDemo(null))
+  }, [])
 
   if (me) return <Navigate to="/app" replace />
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const form = new FormData(event.currentTarget)
+  async function signInWith(email: string, password: string) {
     setBusy(true)
     setError(null)
     try {
-      await signIn(String(form.get('email')), String(form.get('password')))
+      await signIn(email, password)
       navigate((location.state as { from?: string } | null)?.from ?? '/app', { replace: true })
     } catch (e) {
       setError((e as ApiError).message)
@@ -43,8 +47,19 @@ export function LoginPage() {
     }
   }
 
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const form = new FormData(event.currentTarget)
+    signInWith(String(form.get('email')), String(form.get('password')))
+  }
+
   return (
     <AuthLayout title="Sign in to your desk">
+      {demo && (
+        <button type="button" className="btn btn--card btn--block" disabled={busy} onClick={() => signInWith(demo.email, demo.password)}>
+          Open the demo account
+        </button>
+      )}
       <form className="form" onSubmit={submit} noValidate>
         <Field label="Email" name="email" type="email" autoComplete="email" required />
         <Field label="Password" name="password" type="password" autoComplete="current-password" required />
