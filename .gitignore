@@ -1,0 +1,15 @@
+bin/
+obj/
+*.user
+.vs/
+.vscode/
+.idea/
+node_modules/
+dist/
+src/TutoringManager.Api/wwwroot/
+.env
+*.local
+TestResults/
+test-results/
+playwright-report/
+video/out/
