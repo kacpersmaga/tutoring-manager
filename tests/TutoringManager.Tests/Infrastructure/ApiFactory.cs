@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
+using TutoringManager.Api.Emails;
 using Testcontainers.PostgreSql;
 
 namespace TutoringManager.Tests.Infrastructure;
@@ -16,6 +17,7 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:16-alpine").Build();
 
     public FakeTimeProvider Time { get; } = new(new DateTimeOffset(2027, 1, 11, 9, 0, 0, TimeSpan.Zero));
+    public FakeEmailSender Emails { get; } = new();
 
     public async Task InitializeAsync() => await _postgres.StartAsync();
 
@@ -37,6 +39,7 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton<TimeProvider>(Time);
+            services.AddSingleton<IEmailSender>(Emails);
         });
     }
 }

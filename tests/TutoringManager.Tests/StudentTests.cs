@@ -117,11 +117,12 @@ public class StudentTests(ApiFactory factory)
         Assert.Equal(HttpStatusCode.OK, (await owner.GetAsync($"/api/students/{student.Id}")).StatusCode);
     }
 
-    public static async Task<StudentDetails> CreateStudentAsync(HttpClient client, decimal rate = 100m, string? name = null) =>
+    public static async Task<StudentDetails> CreateStudentAsync(
+        HttpClient client, decimal rate = 100m, string? name = null, string? email = null) =>
         await (await client.PostAsJsonAsync("/api/students", new
         {
             fullName = name ?? "Student " + Guid.NewGuid().ToString("N")[..6],
-            email = "student@example.com",
+            email = email ?? "student@example.com",
             ratePerLesson = rate,
         })).ReadAsync<StudentDetails>();
 }
