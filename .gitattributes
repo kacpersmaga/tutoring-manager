@@ -3,4 +3,4 @@
 *.jpg binary
 *.gif binary
 *.mp4 binary
-*.csv text eol=lf -diff
+*.csv binary
