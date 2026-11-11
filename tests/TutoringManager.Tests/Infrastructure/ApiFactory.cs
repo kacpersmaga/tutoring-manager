@@ -29,6 +29,9 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
         builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:Default", _postgres.GetConnectionString());
+        // All test requests come from the same (unknown) IP; rate limiting has its own tests.
+        builder.UseSetting("RateLimits:AuthPerMinute", "100000");
+        builder.UseSetting("RateLimits:AttendancePerMinute", "100000");
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton<TimeProvider>(Time);
