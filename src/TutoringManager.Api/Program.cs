@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using TutoringManager.Api.Auth;
 using TutoringManager.Api.Infrastructure;
+using TutoringManager.Api.Lessons;
 using TutoringManager.Api.Students;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +23,7 @@ builder.Services.AddAppAuth(builder.Configuration);
 builder.Services.AddAppRateLimiting(builder.Configuration);
 
 builder.Services.AddScoped<StudentService>();
+builder.Services.AddScoped<LessonService>();
 
 var app = builder.Build();
 
@@ -39,6 +41,7 @@ app.MapGet("/health", async (AppDbContext db) =>
 
 app.MapAuthEndpoints();
 app.MapStudentEndpoints();
+app.MapLessonEndpoints();
 
 await app.MigrateDatabaseAsync();
 app.Run();

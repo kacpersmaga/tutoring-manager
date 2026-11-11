@@ -1,0 +1,37 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace TutoringManager.Api.Lessons;
+
+public record CreateLessonRequest(
+    Guid StudentId,
+    DateOnly Date,
+    TimeOnly StartTime,
+    [property: Range(15, 480)] int DurationMinutes);
+
+public record UpdateLessonRequest(
+    DateOnly Date,
+    TimeOnly StartTime,
+    [property: Range(15, 480)] int DurationMinutes);
+
+public record SaveNoteRequest([property: MaxLength(LessonNote.MaxLength)] string Content);
+
+public record LessonResponse(
+    Guid Id,
+    Guid StudentId,
+    string StudentName,
+    Guid? SeriesId,
+    DateOnly Date,
+    TimeOnly StartTime,
+    int DurationMinutes,
+    DateTime StartUtc,
+    DateTime EndUtc,
+    LessonStatus Status,
+    AttendanceResponse Attendance,
+    DateTime? AttendanceRespondedAt,
+    decimal PricePerLesson,
+    bool IsModifiedFromSeries,
+    string? Note);
+
+public record StudentNoteResponse(Guid LessonId, DateOnly Date, TimeOnly StartTime, string Content, DateTime UpdatedAt);
+
+public record CompletePastResponse(int Completed);

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace TutoringManager.Api.Infrastructure;
 
@@ -7,6 +8,11 @@ public class ApiExceptionHandler(IProblemDetailsService problemDetails) : IExcep
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext context, Exception exception, CancellationToken cancellationToken)
     {
+        if (exception is DbUpdateConcurrencyException)
+        {
+            exception = ApiException.Conflict("This item was changed in the meantime.", "Reload and try again.");
+        }
+
         if (exception is not ApiException apiException)
         {
             return false;
