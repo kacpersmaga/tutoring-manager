@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,7 @@ using TutoringManager.Api.Students;
 namespace TutoringManager.Api.Infrastructure;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options, CurrentTutor currentTutor)
-    : IdentityDbContext<Tutor, IdentityRole<Guid>, Guid>(options)
+    : IdentityDbContext<Tutor, IdentityRole<Guid>, Guid>(options), IDataProtectionKeyContext
 {
     public DbSet<Student> Students => Set<Student>();
     public DbSet<StudentBankAccount> StudentBankAccounts => Set<StudentBankAccount>();
@@ -24,6 +25,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, CurrentTutor c
     public DbSet<ScheduledEmail> ScheduledEmails => Set<ScheduledEmail>();
     public DbSet<BankImport> BankImports => Set<BankImport>();
     public DbSet<BankTransaction> BankTransactions => Set<BankTransaction>();
+
+    // Keys that sign the session and antiforgery cookies. In the database, so sign-ins survive a restart
+    // and every app instance can read the same cookies.
+    public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
 
     // Read by the global query filters on every query, so a tutor only ever sees their own rows.
     // Background workers have no signed-in tutor and use IgnoreQueryFilters() explicitly.

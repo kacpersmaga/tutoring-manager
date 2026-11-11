@@ -1,7 +1,9 @@
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using TutoringManager.Api.Attendance;
 using TutoringManager.Api.Auth;
+using TutoringManager.Api.Demo;
 using TutoringManager.Api.Emails;
 using TutoringManager.Api.Infrastructure;
 using TutoringManager.Api.Lessons;
@@ -22,6 +24,7 @@ builder.Services.AddDbContext<AppDbContext>(options => options
     .UseNpgsql(builder.Configuration.GetConnectionString("Default"))
     .UseSnakeCaseNamingConvention());
 
+builder.Services.AddDataProtection().PersistKeysToDbContext<AppDbContext>().SetApplicationName("TutoringManager");
 builder.Services.AddAppAuth(builder.Configuration);
 builder.Services.AddAppRateLimiting(builder.Configuration);
 
@@ -37,6 +40,8 @@ builder.Services.AddSingleton<IBankStatementParser, MBankParser>();
 builder.Services.AddScoped<ImportService>();
 builder.Services.AddScoped<TransactionService>();
 builder.Services.AddScoped<ReportService>();
+builder.Services.Configure<DemoOptions>(builder.Configuration.GetSection("Demo"));
+builder.Services.AddScoped<DemoSeeder>();
 
 if (builder.Configuration.GetValue("Workers:Enabled", true))
 {
@@ -46,6 +51,14 @@ if (builder.Configuration.GetValue("Workers:Enabled", true))
 
 var app = builder.Build();
 
+if (app.Configuration.GetValue("Security:HttpsOnly", false))
+{
+    // Production behind TLS: redirect plain HTTP and tell browsers to stay on HTTPS.
+    app.UseHsts();
+    app.UseHttpsRedirection();
+}
+
+app.UseSecurityHeaders();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseStaticFiles();
@@ -64,12 +77,14 @@ app.MapStudentEndpoints();
 app.MapLessonEndpoints();
 app.MapAttendanceEndpoints();
 app.MapPaymentEndpoints();
+app.MapDemoEndpoints();
 
 // The React app is served from wwwroot; unknown /api paths stay 404 instead of returning the SPA.
 app.MapFallback("/api/{**path}", () => Results.NotFound());
 app.MapFallbackToFile("index.html");
 
 await app.MigrateDatabaseAsync();
+await app.SeedDemoAsync();
 app.Run();
 
 public partial class Program;
