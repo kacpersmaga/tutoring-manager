@@ -124,11 +124,15 @@ Queues, Redis, microservices, Kubernetes, CQRS, student accounts, online payment
 
 ## Run it in 2 minutes
 
-Requirements: Docker.
+Requirements: Docker. Nothing else: the front end and the API are built inside the image.
 
 ```bash
+git clone https://github.com/kacpersmaga/tutoring-manager.git
+cd tutoring-manager
 docker compose up --build
 ```
+
+Measured from `git clone` to a healthy app: **20 seconds** with a cold build (`--no-cache`) on a desktop machine whose Docker already had the base images. The first ever run also pulls the .NET, Node and PostgreSQL base images (about 1 GB), which depends on your connection.
 
 The first start creates the database and a demo account with two months of realistic data. The console prints the address, the demo login and the Mailpit address. On the sign-in page, **Open the demo account** signs you straight in; **Reset demo** in the top bar puts the data back to its starting state, dated from today.
 
