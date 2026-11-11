@@ -324,6 +324,10 @@ namespace TutoringManager.Api.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("series_id");
 
+                    b.Property<DateOnly?>("SeriesOccurrenceDate")
+                        .HasColumnType("date")
+                        .HasColumnName("series_occurrence_date");
+
                     b.Property<DateTime>("StartUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("start_utc");
@@ -356,6 +360,9 @@ namespace TutoringManager.Api.Infrastructure.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_lessons");
+
+                    b.HasIndex("SeriesId")
+                        .HasDatabaseName("ix_lessons_series_id");
 
                     b.HasIndex("StudentId")
                         .HasDatabaseName("ix_lessons_student_id");
@@ -406,6 +413,65 @@ namespace TutoringManager.Api.Infrastructure.Migrations
                         .HasDatabaseName("ix_lesson_notes_lesson_id");
 
                     b.ToTable("lesson_notes", (string)null);
+                });
+
+            modelBuilder.Entity("TutoringManager.Api.Lessons.LessonSeries", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("DayOfWeek")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("day_of_week");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("duration_minutes");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date")
+                        .HasColumnName("end_date");
+
+                    b.Property<DateOnly>("GeneratedUntil")
+                        .HasColumnType("date")
+                        .HasColumnName("generated_until");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("start_date");
+
+                    b.Property<TimeOnly>("StartTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("start_time");
+
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("student_id");
+
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("time_zone_id");
+
+                    b.Property<Guid>("TutorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tutor_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_lesson_series");
+
+                    b.HasIndex("StudentId")
+                        .HasDatabaseName("ix_lesson_series_student_id");
+
+                    b.HasIndex("TutorId")
+                        .HasDatabaseName("ix_lesson_series_tutor_id");
+
+                    b.ToTable("lesson_series", (string)null);
                 });
 
             modelBuilder.Entity("TutoringManager.Api.Students.Student", b =>
@@ -546,6 +612,12 @@ namespace TutoringManager.Api.Infrastructure.Migrations
 
             modelBuilder.Entity("TutoringManager.Api.Lessons.Lesson", b =>
                 {
+                    b.HasOne("TutoringManager.Api.Lessons.LessonSeries", null)
+                        .WithMany()
+                        .HasForeignKey("SeriesId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_lessons_lesson_series_series_id");
+
                     b.HasOne("TutoringManager.Api.Students.Student", "Student")
                         .WithMany()
                         .HasForeignKey("StudentId")
@@ -564,6 +636,16 @@ namespace TutoringManager.Api.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_lesson_notes_lessons_lesson_id");
+                });
+
+            modelBuilder.Entity("TutoringManager.Api.Lessons.LessonSeries", b =>
+                {
+                    b.HasOne("TutoringManager.Api.Students.Student", null)
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_lesson_series_students_student_id");
                 });
 
             modelBuilder.Entity("TutoringManager.Api.Students.Student", b =>

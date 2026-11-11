@@ -23,6 +23,10 @@ public class Lesson
     public Guid StudentId { get; set; }
     public Guid? SeriesId { get; set; }
 
+    /// <summary>The series date this lesson was generated for. Stays the same when the lesson is moved,
+    /// so regenerating the series does not create a second lesson for that week.</summary>
+    public DateOnly? SeriesOccurrenceDate { get; set; }
+
     // Local date, time and time zone are the source of truth; StartUtc/EndUtc are derived for queries.
     public DateOnly LocalDate { get; set; }
     public TimeOnly LocalStartTime { get; set; }

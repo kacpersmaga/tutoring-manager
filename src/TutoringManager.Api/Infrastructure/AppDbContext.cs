@@ -14,6 +14,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, CurrentTutor c
     public DbSet<StudentBankAccount> StudentBankAccounts => Set<StudentBankAccount>();
     public DbSet<Lesson> Lessons => Set<Lesson>();
     public DbSet<LessonNote> LessonNotes => Set<LessonNote>();
+    public DbSet<LessonSeries> LessonSeries => Set<LessonSeries>();
 
     // Read by the global query filters on every query, so a tutor only ever sees their own rows.
     // Background workers have no signed-in tutor and use IgnoreQueryFilters() explicitly.
@@ -35,5 +36,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, CurrentTutor c
         builder.Entity<StudentBankAccount>().HasQueryFilter(a => a.TutorId == CurrentTutorId);
         builder.Entity<Lesson>().HasQueryFilter(l => l.TutorId == CurrentTutorId);
         builder.Entity<LessonNote>().HasQueryFilter(n => n.TutorId == CurrentTutorId);
+        builder.Entity<LessonSeries>().HasQueryFilter(s => s.TutorId == CurrentTutorId);
     }
 }
