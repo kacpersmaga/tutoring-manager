@@ -48,6 +48,7 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
@@ -63,6 +64,10 @@ app.MapStudentEndpoints();
 app.MapLessonEndpoints();
 app.MapAttendanceEndpoints();
 app.MapPaymentEndpoints();
+
+// The React app is served from wwwroot; unknown /api paths stay 404 instead of returning the SPA.
+app.MapFallback("/api/{**path}", () => Results.NotFound());
+app.MapFallbackToFile("index.html");
 
 await app.MigrateDatabaseAsync();
 app.Run();
