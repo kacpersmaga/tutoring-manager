@@ -185,6 +185,47 @@ namespace TutoringManager.Api.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("TutoringManager.Api.Attendance.AttendanceToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at_utc");
+
+                    b.Property<Guid>("LessonId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lesson_id");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<byte[]>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("token_hash");
+
+                    b.HasKey("Id")
+                        .HasName("pk_attendance_tokens");
+
+                    b.HasIndex("LessonId")
+                        .HasDatabaseName("ix_attendance_tokens_lesson_id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_attendance_tokens_token_hash");
+
+                    b.ToTable("attendance_tokens", (string)null);
+                });
+
             modelBuilder.Entity("TutoringManager.Api.Auth.Tutor", b =>
                 {
                     b.Property<Guid>("Id")
@@ -608,6 +649,16 @@ namespace TutoringManager.Api.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_asp_net_user_tokens_asp_net_users_user_id");
+                });
+
+            modelBuilder.Entity("TutoringManager.Api.Attendance.AttendanceToken", b =>
+                {
+                    b.HasOne("TutoringManager.Api.Lessons.Lesson", null)
+                        .WithMany()
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_attendance_tokens_lessons_lesson_id");
                 });
 
             modelBuilder.Entity("TutoringManager.Api.Lessons.Lesson", b =>

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using TutoringManager.Api.Attendance;
 using TutoringManager.Api.Auth;
 using TutoringManager.Api.Lessons;
 using TutoringManager.Api.Students;
@@ -15,6 +16,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, CurrentTutor c
     public DbSet<Lesson> Lessons => Set<Lesson>();
     public DbSet<LessonNote> LessonNotes => Set<LessonNote>();
     public DbSet<LessonSeries> LessonSeries => Set<LessonSeries>();
+
+    // No TutorId and no filter: tokens are only ever looked up by their hash.
+    public DbSet<AttendanceToken> AttendanceTokens => Set<AttendanceToken>();
 
     // Read by the global query filters on every query, so a tutor only ever sees their own rows.
     // Background workers have no signed-in tutor and use IgnoreQueryFilters() explicitly.
