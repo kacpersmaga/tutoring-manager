@@ -32,6 +32,8 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         // All test requests come from the same (unknown) IP; rate limiting has its own tests.
         builder.UseSetting("RateLimits:AuthPerMinute", "100000");
         builder.UseSetting("RateLimits:AttendancePerMinute", "100000");
+        // Background workers are driven explicitly by tests instead of on a timer.
+        builder.UseSetting("Workers:Enabled", "false");
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton<TimeProvider>(Time);

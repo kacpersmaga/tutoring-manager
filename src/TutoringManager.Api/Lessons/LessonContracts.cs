@@ -35,3 +35,25 @@ public record LessonResponse(
 public record StudentNoteResponse(Guid LessonId, DateOnly Date, TimeOnly StartTime, string Content, DateTime UpdatedAt);
 
 public record CompletePastResponse(int Completed);
+
+public record CreateSeriesRequest(
+    Guid StudentId,
+    DateOnly StartDate,
+    TimeOnly StartTime,
+    [property: Range(15, 480)] int DurationMinutes,
+    DateOnly? EndDate);
+
+public record UpdateSeriesRequest(
+    DayOfWeek DayOfWeek,
+    TimeOnly StartTime,
+    [property: Range(15, 480)] int DurationMinutes,
+    DateOnly? EndDate);
+
+public record SeriesResponse(
+    Guid Id,
+    Guid StudentId,
+    DayOfWeek DayOfWeek,
+    TimeOnly StartTime,
+    int DurationMinutes,
+    DateOnly StartDate,
+    DateOnly? EndDate);

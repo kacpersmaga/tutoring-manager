@@ -24,6 +24,12 @@ builder.Services.AddAppRateLimiting(builder.Configuration);
 
 builder.Services.AddScoped<StudentService>();
 builder.Services.AddScoped<LessonService>();
+builder.Services.AddScoped<SeriesService>();
+
+if (builder.Configuration.GetValue("Workers:Enabled", true))
+{
+    builder.Services.AddHostedService<SeriesExtensionWorker>();
+}
 
 var app = builder.Build();
 

@@ -159,8 +159,11 @@ public class LessonService(AppDbContext db, CurrentTutor currentTutor, TimeProvi
     /// </summary>
     public async Task EnsureNoOverlapAsync(Lesson lesson)
     {
+        // Filters are ignored and the tutor is given explicitly, so this also works in background workers.
         var clash = await db.Lessons
-            .Where(l => l.Id != lesson.Id
+            .IgnoreQueryFilters()
+            .Where(l => l.TutorId == lesson.TutorId
+                && l.Id != lesson.Id
                 && l.Status != LessonStatus.Cancelled
                 && l.StartUtc < lesson.EndUtc
                 && l.EndUtc > lesson.StartUtc)
