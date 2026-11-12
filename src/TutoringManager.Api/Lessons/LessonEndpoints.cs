@@ -18,6 +18,11 @@ public static class LessonEndpoints
         lessons.MapPost("/{id:guid}/complete", (Guid id, LessonService service) => service.CompleteAsync(id));
         lessons.MapPost("/complete-past", (LessonService service) => service.CompletePastAsync());
         lessons.MapPut("/{id:guid}/note", (Guid id, SaveNoteRequest request, LessonService service) => service.SaveNoteAsync(id, request));
+        lessons.MapDelete("/{id:guid}/note", async (Guid id, LessonService service) =>
+        {
+            await service.DeleteNoteAsync(id);
+            return Results.NoContent();
+        });
 
         var series = app.MapGroup("/api/series").RequireAuthorization();
 
@@ -35,7 +40,9 @@ public static class LessonEndpoints
             return Results.NoContent();
         });
 
-        app.MapGet("/api/students/{id:guid}/notes", (Guid id, LessonService service) => service.GetStudentNotesAsync(id))
+        app.MapGet("/api/students/{id:guid}/notes", (Guid id, int? skip, LessonService service) => service.GetStudentNotesAsync(id, skip ?? 0))
+            .RequireAuthorization();
+        app.MapGet("/api/students/{id:guid}/lessons-without-note", (Guid id, LessonService service) => service.GetLessonsWithoutNoteAsync(id))
             .RequireAuthorization();
     }
 }

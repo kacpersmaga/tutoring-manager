@@ -155,18 +155,53 @@ public class LessonService(
         return await GetAsync(lesson.Id);
     }
 
-    public async Task<List<StudentNoteResponse>> GetStudentNotesAsync(Guid studentId)
+    public const int NotesPageSize = 20;
+
+    /// <summary>Newest first, a page at a time, so a student with years of lessons stays quick to open.</summary>
+    public async Task<StudentNotesPage> GetStudentNotesAsync(Guid studentId, int skip)
+    {
+        await EnsureStudentExistsAsync(studentId);
+
+        // One extra row tells whether there is another page, without a separate count query.
+        var notes = await db.Lessons
+            .Where(l => l.StudentId == studentId && l.Note != null)
+            .OrderByDescending(l => l.StartUtc)
+            .Skip(Math.Max(0, skip))
+            .Take(NotesPageSize + 1)
+            .Select(l => new StudentNoteResponse(l.Id, l.LocalDate, l.LocalStartTime, l.Note!.Content, l.Note.UpdatedAt))
+            .ToListAsync();
+
+        return new StudentNotesPage(notes.Take(NotesPageSize).ToList(), notes.Count > NotesPageSize);
+    }
+
+    /// <summary>The student's most recent started lessons without a note: what the "Add note" form offers.</summary>
+    public async Task<List<LessonWithoutNote>> GetLessonsWithoutNoteAsync(Guid studentId)
+    {
+        await EnsureStudentExistsAsync(studentId);
+        var now = time.GetUtcNow().UtcDateTime;
+
+        return await db.Lessons
+            .Where(l => l.StudentId == studentId && l.Note == null && l.Status != LessonStatus.Cancelled && l.StartUtc <= now)
+            .OrderByDescending(l => l.StartUtc)
+            .Take(10)
+            .Select(l => new LessonWithoutNote(l.Id, l.LocalDate, l.LocalStartTime))
+            .ToListAsync();
+    }
+
+    public async Task DeleteNoteAsync(Guid lessonId)
+    {
+        var note = await db.LessonNotes.FirstOrDefaultAsync(n => n.LessonId == lessonId)
+            ?? throw ApiException.NotFound("Note");
+        db.LessonNotes.Remove(note);
+        await db.SaveChangesAsync();
+    }
+
+    private async Task EnsureStudentExistsAsync(Guid studentId)
     {
         if (!await db.Students.AnyAsync(s => s.Id == studentId))
         {
             throw ApiException.NotFound("Student");
         }
-
-        return await db.Lessons
-            .Where(l => l.StudentId == studentId && l.Note != null)
-            .OrderByDescending(l => l.StartUtc)
-            .Select(l => new StudentNoteResponse(l.Id, l.LocalDate, l.LocalStartTime, l.Note!.Content, l.Note.UpdatedAt))
-            .ToListAsync();
     }
 
     public async Task<string> GetTutorTimeZoneAsync() =>

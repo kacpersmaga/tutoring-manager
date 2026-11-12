@@ -160,8 +160,9 @@ public class LessonTests(ApiFactory factory)
             .ReadAsync<LessonResponse>();
         Assert.Equal("Vieta's formulas. Homework: ex. 4-9.", saved.Note);
 
-        var notes = await (await client.GetAsync($"/api/students/{student.Id}/notes")).ReadAsync<List<StudentNoteResponse>>();
-        Assert.Equal([newer.Id, older.Id], notes.Select(n => n.LessonId));
+        var notes = await (await client.GetAsync($"/api/students/{student.Id}/notes")).ReadAsync<StudentNotesPage>();
+        Assert.Equal([newer.Id, older.Id], notes.Notes.Select(n => n.LessonId));
+        Assert.False(notes.HasMore);
     }
 
     [Fact]
@@ -203,4 +204,63 @@ public class LessonTests(ApiFactory factory)
 
     public static async Task<LessonResponse> GetLessonAsync(HttpClient client, Guid id) =>
         await (await client.GetAsync($"/api/lessons/{id}")).ReadAsync<LessonResponse>();
+}
+
+[Collection(ApiCollection.Name)]
+public class StudentNotesTests(ApiFactory factory)
+{
+    [Fact]
+    public async Task Notes_come_in_pages_of_twenty_newest_first()
+    {
+        var client = await factory.CreateTutorClientAsync();
+        var student = await StudentTests.CreateStudentAsync(client);
+        for (var day = 1; day <= 25; day++)
+        {
+            var lesson = await LessonTests.CreateLessonAsync(client, student.Id, $"2026-12-{day:00}", "10:00");
+            await client.PutAsJsonAsync($"/api/lessons/{lesson.Id}/note", new { content = $"Note {day}" });
+        }
+
+        var first = await (await client.GetAsync($"/api/students/{student.Id}/notes")).ReadAsync<StudentNotesPage>();
+        var second = await (await client.GetAsync($"/api/students/{student.Id}/notes?skip=20")).ReadAsync<StudentNotesPage>();
+
+        Assert.Equal(20, first.Notes.Count);
+        Assert.True(first.HasMore);
+        Assert.Equal("Note 25", first.Notes[0].Content);
+        Assert.Equal(5, second.Notes.Count);
+        Assert.False(second.HasMore);
+        Assert.Equal("Note 1", second.Notes[^1].Content);
+    }
+
+    [Fact]
+    public async Task Add_note_form_offers_started_lessons_without_a_note()
+    {
+        var client = await factory.CreateTutorClientAsync();
+        var student = await StudentTests.CreateStudentAsync(client);
+        var withNote = await LessonTests.CreateLessonAsync(client, student.Id, "2027-01-04", "10:00");
+        await client.PutAsJsonAsync($"/api/lessons/{withNote.Id}/note", new { content = "Done already" });
+        var withoutNote = await LessonTests.CreateLessonAsync(client, student.Id, "2027-01-05", "10:00");
+        var cancelled = await LessonTests.CreateLessonAsync(client, student.Id, "2027-01-06", "10:00");
+        await client.PostAsync($"/api/lessons/{cancelled.Id}/cancel", null);
+        await LessonTests.CreateLessonAsync(client, student.Id, "2027-01-20", "10:00"); // still in the future
+
+        var offered = await (await client.GetAsync($"/api/students/{student.Id}/lessons-without-note")).ReadAsync<List<LessonWithoutNote>>();
+
+        Assert.Equal([withoutNote.Id], offered.Select(l => l.LessonId));
+    }
+
+    [Fact]
+    public async Task Note_can_be_deleted_only_by_its_tutor()
+    {
+        var owner = await factory.CreateTutorClientAsync();
+        var intruder = await factory.CreateTutorClientAsync();
+        var student = await StudentTests.CreateStudentAsync(owner);
+        var lesson = await LessonTests.CreateLessonAsync(owner, student.Id, "2027-01-04", "10:00");
+        await owner.PutAsJsonAsync($"/api/lessons/{lesson.Id}/note", new { content = "Private" });
+
+        Assert.Equal(HttpStatusCode.NotFound, (await intruder.DeleteAsync($"/api/lessons/{lesson.Id}/note")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await intruder.GetAsync($"/api/students/{student.Id}/lessons-without-note")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/api/lessons/{lesson.Id}/note")).StatusCode);
+        Assert.Null((await LessonTests.GetLessonAsync(owner, lesson.Id)).Note);
+        Assert.Equal(HttpStatusCode.NotFound, (await owner.DeleteAsync($"/api/lessons/{lesson.Id}/note")).StatusCode);
+    }
 }

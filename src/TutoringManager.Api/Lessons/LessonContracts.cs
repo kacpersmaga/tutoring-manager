@@ -36,6 +36,12 @@ public record LessonResponse(
 
 public record StudentNoteResponse(Guid LessonId, DateOnly Date, TimeOnly StartTime, string Content, DateTime UpdatedAt);
 
+/// <summary>One page of a student's notes, newest first. <see cref="HasMore"/> tells the UI to offer older ones.</summary>
+public record StudentNotesPage(List<StudentNoteResponse> Notes, bool HasMore);
+
+/// <summary>A lesson that can still get a note: already started, not cancelled, no note yet.</summary>
+public record LessonWithoutNote(Guid LessonId, DateOnly Date, TimeOnly StartTime);
+
 public record CompletePastResponse(int Completed);
 
 public record CreateSeriesRequest(
