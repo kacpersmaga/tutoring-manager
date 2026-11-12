@@ -4,49 +4,72 @@ import { fade } from "@remotion/transitions/fade";
 import React from "react";
 import { AbsoluteFill, staticFile, useVideoConfig } from "remotion";
 import marks from "../public/clips/marks.json";
-import { color } from "./theme";
+import { color, desk, paperShadow } from "./theme";
 
 const seconds = (ms: number) => ms / 1000;
 
-export const readmeGifSeconds =
-  seconds(marks.calendar.dialog + 1800 - marks.calendar.ready - 1500) +
-  seconds(marks.phone.end - marks.phone.ready - 600) +
-  2 +
-  seconds(marks.payments.assigned + 1200 - marks.payments.ready - 1000) -
-  3 * 0.3;
+// Which part of each recording the GIF plays, in milliseconds from the clip's start.
+const parts = {
+  calendar: [marks.calendar.ready + 800, marks.calendar.dialog + 2200],
+  phone: [marks.phone.ready + 400, marks.phone.end],
+  coming: [marks.coming.ready, marks.coming.ready + 2400],
+  payments: [marks.payments.ready, marks.payments.end],
+} as const;
 
-/** About 15 seconds for the top of the README: lesson card, the student's tap, the card changes, the statement import. */
-export const ReadmeGif: React.FC = () => {
+const crossfade = 0.3;
+
+export const readmeGifSeconds =
+  Object.values(parts).reduce((total, [from, to]) => total + seconds(to - from), 0) - 3 * crossfade;
+
+/** A desktop recording as a sheet of paper on the desk. */
+const DesktopFrame: React.FC<{ name: string; from: number; to: number }> = ({ name, from, to }) => {
   const { fps } = useVideoConfig();
-  const cut = <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: Math.round(0.3 * fps) })} />;
-  const clip = (name: string, from: number, to: number, phone = false) => (
-    <AbsoluteFill style={{ backgroundColor: color.desk, alignItems: "center", justifyContent: "center" }}>
-      <Video
-        src={staticFile(`clips/${name}.webm`)}
-        trimBefore={Math.round(seconds(from) * fps)}
-        trimAfter={Math.round(seconds(to) * fps)}
-        muted
-        style={phone ? { height: "100%" } : { width: "100%", height: "100%" }}
-      />
+  return (
+    <AbsoluteFill style={{ ...desk, alignItems: "center", justifyContent: "center" }}>
+      <div style={{ width: 1120, height: 700, borderRadius: 14, overflow: "hidden", backgroundColor: color.cotton, boxShadow: paperShadow }}>
+        <Video src={staticFile(`clips/${name}.webm`)} trimBefore={Math.round(seconds(from) * fps)} trimAfter={Math.round(seconds(to) * fps)} muted style={{ width: "100%", height: "100%" }} />
+      </div>
     </AbsoluteFill>
   );
+};
+
+/** The student's phone: a dark body with rounded corners and a speaker slot around the recording. */
+const PhoneFrame: React.FC<{ from: number; to: number }> = ({ from, to }) => {
+  const { fps } = useVideoConfig();
+  return (
+    <AbsoluteFill style={{ ...desk, alignItems: "center", justifyContent: "center" }}>
+      <div style={{ position: "relative", width: 360, height: 760, padding: 14, borderRadius: 54, backgroundColor: color.board, boxShadow: paperShadow }}>
+        <div style={{ width: "100%", height: "100%", borderRadius: 42, overflow: "hidden", backgroundColor: color.cotton }}>
+          <Video src={staticFile("clips/phone.webm")} trimBefore={Math.round(seconds(from) * fps)} trimAfter={Math.round(seconds(to) * fps)} muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        </div>
+        <div style={{ position: "absolute", top: 26, left: "50%", width: 96, height: 26, marginLeft: -48, borderRadius: 13, backgroundColor: color.board }} />
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+/** About 20 seconds for the top of the README: the week, the student's tap, the answer arriving, a statement filling the month. */
+export const ReadmeGif: React.FC = () => {
+  const { fps } = useVideoConfig();
+  const cut = <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: Math.round(crossfade * fps) })} />;
+  const length = ([from, to]: readonly [number, number]) => Math.round(seconds(to - from) * fps);
 
   return (
     <TransitionSeries>
-      <TransitionSeries.Sequence durationInFrames={Math.round(seconds(marks.calendar.dialog + 1800 - marks.calendar.ready - 1500) * fps)}>
-        {clip("calendar", marks.calendar.ready + 1500, marks.calendar.dialog + 1800)}
+      <TransitionSeries.Sequence name="Week" durationInFrames={length(parts.calendar)}>
+        <DesktopFrame name="calendar" from={parts.calendar[0]} to={parts.calendar[1]} />
       </TransitionSeries.Sequence>
       {cut}
-      <TransitionSeries.Sequence durationInFrames={Math.round(seconds(marks.phone.end - marks.phone.ready - 600) * fps)}>
-        {clip("phone", marks.phone.ready + 600, marks.phone.end, true)}
+      <TransitionSeries.Sequence name="Phone" durationInFrames={length(parts.phone)}>
+        <PhoneFrame from={parts.phone[0]} to={parts.phone[1]} />
       </TransitionSeries.Sequence>
       {cut}
-      <TransitionSeries.Sequence durationInFrames={Math.round(2 * fps)}>
-        {clip("coming", marks.coming.ready, marks.coming.ready + 2000)}
+      <TransitionSeries.Sequence name="Coming" durationInFrames={length(parts.coming)}>
+        <DesktopFrame name="coming" from={parts.coming[0]} to={parts.coming[1]} />
       </TransitionSeries.Sequence>
       {cut}
-      <TransitionSeries.Sequence durationInFrames={Math.round(seconds(marks.payments.assigned + 1200 - marks.payments.ready - 1000) * fps)}>
-        {clip("payments", marks.payments.ready + 1000, marks.payments.assigned + 1200)}
+      <TransitionSeries.Sequence name="Payments" durationInFrames={length(parts.payments)}>
+        <DesktopFrame name="payments" from={parts.payments[0]} to={parts.payments[1]} />
       </TransitionSeries.Sequence>
     </TransitionSeries>
   );
