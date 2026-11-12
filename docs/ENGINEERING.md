@@ -56,6 +56,7 @@ flowchart LR
 - **Lesson price is copied from the student's rate** when the lesson is created, so changing the rate does not rewrite past invoices.
 - **Bank accounts are stored normalized** (26 digits, no `PL`, no spaces) and checked with the IBAN mod-97 checksum, so a typo is caught when the account is entered, not when a payment fails to match.
 
+- **Notes are written where the tutor looks for them.** From a lesson in the calendar or from the student's page, where "Add note" offers the student's started lessons that have no note yet. Notes load 20 at a time (newest first, one extra row tells whether there are more, no count query). Deleting a note happens at once with an Undo for a few seconds rather than an "are you sure?" dialog.
 - **The README is a product page made of images.** Slides (headline plus the real screen) are rendered from the running demo by `scripts/screenshots/readme-slides.mjs`, so they never drift from the product; the technical write-up lives here.
 - **Two typefaces with separate jobs.** General Sans for headings and the wordmark, Geist for everything people read and use, with tabular numerals for money; Geist Mono only for account numbers. Chosen after a UI audit found General Sans tiring at small sizes in dense screens. See [design.md](design.md).
 
