@@ -14,3 +14,4 @@ test-results/
 playwright-report/
 video/out/
 scripts/screenshots/node_modules/
+scripts/screenshots/audit-out/
