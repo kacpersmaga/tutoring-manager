@@ -140,7 +140,7 @@ public class DemoSeeder(
         return lesson;
     }
 
-    /// <summary>Past lessons: completed with a note (a few cancelled). Next three days: a mix of answers. Later: waiting.</summary>
+    /// <summary>Past lessons: completed with a note (a few cancelled). Next seven days (one full week, whatever today is): a mix of answers. Later: waiting.</summary>
     private void DecorateLessons(List<Lesson> lessons, DemoData.DemoStudent cast, int studentIndex, DateTime now, Random random)
     {
         var topics = DemoData.NoteTopics[cast.Subject];
@@ -169,7 +169,7 @@ public class DemoSeeder(
                     pastCount++;
                 }
             }
-            else if (lesson.StartUtc - now <= TimeSpan.FromDays(3))
+            else if (lesson.StartUtc - now <= TimeSpan.FromDays(7))
             {
                 switch (_upcomingAnswered++ % 4)
                 {
