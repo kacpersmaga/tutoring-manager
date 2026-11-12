@@ -5,18 +5,26 @@ import { useAuth } from '../auth'
 import { Field } from '../components/Field'
 import { FormError } from '../components/States'
 
-function AuthLayout({ title, children }: { title: string; children: React.ReactNode }) {
+/** The form on paper on the left; the product itself, on the desk, on the right (hidden on phones). */
+function AuthLayout({ title, lead, children }: { title: string; lead: string; children: React.ReactNode }) {
   return (
-    <main className="desk auth">
-      <Link to="/" className="wordmark auth__wordmark">
-        Tutoring Manager
-      </Link>
-      <section className="stock auth__sheet" aria-labelledby="auth-title">
-        <h1 id="auth-title">{title}</h1>
-        {children}
-      </section>
-      <Link to="/privacy" className="auth__privacy">Privacy</Link>
-    </main>
+    <div className="auth">
+      <main className="auth__panel">
+        <Link to="/" className="wordmark auth__wordmark">Tutoring Manager</Link>
+        <section className="auth__form" aria-labelledby="auth-title">
+          <div className="auth__head">
+            <h1 id="auth-title">{title}</h1>
+            <p className="auth__lead">{lead}</p>
+          </div>
+          {children}
+        </section>
+        <Link to="/privacy" className="auth__privacy">Privacy</Link>
+      </main>
+      <aside className="auth__showcase desk" aria-hidden="true">
+        <p className="auth__line">Every lesson confirmed. Every złoty matched.</p>
+        <img className="auth__shot stock" src="/product/calendar.jpg" width="2384" height="1530" alt="" />
+      </aside>
+    </div>
   )
 }
 
@@ -54,12 +62,7 @@ export function LoginPage() {
   }
 
   return (
-    <AuthLayout title="Sign in to your desk">
-      {demo && (
-        <button type="button" className="btn btn--card btn--block" disabled={busy} onClick={() => signInWith(demo.email, demo.password)}>
-          Open the demo account
-        </button>
-      )}
+    <AuthLayout title="Sign in" lead="Your week, your students and who has paid.">
       <form className="form" onSubmit={submit} noValidate>
         <Field label="Email" name="email" type="email" autoComplete="email" required />
         <Field label="Password" name="password" type="password" autoComplete="current-password" required />
@@ -71,6 +74,14 @@ export function LoginPage() {
       <p className="auth__switch">
         New here? <Link to="/app/register">Create an account</Link>
       </p>
+      {demo && (
+        <div className="auth__demo">
+          <p><strong>Just looking?</strong> The demo account has two months of lessons, notes and payments.</p>
+          <button type="button" className="btn btn--card btn--block" disabled={busy} onClick={() => signInWith(demo.email, demo.password)}>
+            Open the demo account
+          </button>
+        </div>
+      )}
     </AuthLayout>
   )
 }
@@ -109,7 +120,7 @@ export function RegisterPage() {
   }
 
   return (
-    <AuthLayout title="Set up your desk">
+    <AuthLayout title="Create your account" lead="Free during beta. Your data stays in your own database.">
       <form className="form" onSubmit={submit} noValidate>
         <Field label="Your name" name="displayName" autoComplete="name" required hint="Students see it on their confirmation page." error={errors.displayname} />
         <Field label="Email" name="email" type="email" autoComplete="email" required error={errors.email} />

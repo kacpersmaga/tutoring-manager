@@ -20,12 +20,14 @@ export function Field({ label, name, error, hint, ...input }: FieldProps) {
         name={name}
         className="input"
         aria-invalid={error ? true : undefined}
-        aria-describedby={helpId}
+        aria-describedby={error || hint ? helpId : undefined}
         {...input}
       />
-      <p id={helpId} className={error ? 'field__help field__help--error' : 'field__help'}>
-        {error ?? hint}
-      </p>
+      {(error || hint) && (
+        <p id={helpId} className={error ? 'field__help field__help--error' : 'field__help'}>
+          {error ?? hint}
+        </p>
+      )}
     </div>
   )
 }
