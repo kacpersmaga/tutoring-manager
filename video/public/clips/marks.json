@@ -1,26 +1,26 @@
 {
   "calendar": {
-    "ready": 230,
-    "dialog": 3416,
-    "end": 7244
+    "ready": 292,
+    "dialog": 3451,
+    "end": 7273
   },
   "email": {
-    "ready": 637,
-    "end": 4148
+    "ready": 641,
+    "end": 4147
   },
   "phone": {
-    "ready": 199,
-    "tapped": 2043,
-    "end": 4546
+    "ready": 203,
+    "tapped": 2050,
+    "end": 4564
   },
   "coming": {
-    "ready": 241,
-    "end": 3250
+    "ready": 292,
+    "end": 3304
   },
   "payments": {
-    "ready": 222,
-    "imported": 1925,
-    "assigned": 5698,
-    "end": 9672
+    "ready": 233,
+    "imported": 2449,
+    "assigned": 7200,
+    "end": 11920
   }
 }

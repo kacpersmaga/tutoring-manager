@@ -53,6 +53,11 @@ try {
   const context = await browser.newContext({ viewport: desktop, deviceScaleFactor: 2, reducedMotion: 'reduce' })
   const page = await context.newPage()
   await signInToDemo(page)
+  // Late in the week every lesson is done; the next week shows the students' answers.
+  if (await page.locator('.tag--asked').count() === 0) {
+    await page.locator('.fc-next-button').click()
+    await page.locator('.tag--asked').first().waitFor()
+  }
 
   await shoot(page, 'calendar', { landing: '.calendar' })
 
@@ -85,6 +90,10 @@ try {
 
   await page.goto(`${appUrl}/`)
   await shoot(page, 'landing')
+
+  await page.context().clearCookies()
+  await page.goto(`${appUrl}/app/login`)
+  await shoot(page, 'sign-in')
 } finally {
   await browser.close()
 }
