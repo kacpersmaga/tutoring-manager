@@ -151,7 +151,7 @@ function BankAccounts({ student, onChanged }: { student: StudentDetails; onChang
       <ul className="plain-list">
         {student.bankAccounts.map((a) => (
           <li key={a.id} className="series-row">
-            <span className="fig">{formatAccount(a.accountNumber)}</span>
+            <span className="mono">{formatAccount(a.accountNumber)}</span>
             <button type="button" className="btn btn--text btn--small" aria-label={`Remove account ${a.accountNumber}`}
               onClick={async () => { await api.delete(`/api/students/${student.id}/accounts/${a.id}`); onChanged() }}>
               Remove

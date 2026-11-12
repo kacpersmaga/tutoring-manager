@@ -17,6 +17,8 @@ A tutor's desk: warm grey paper, cotton stationery lit from the left, one coral 
 | Cancelled | faded, name struck through |
 | Email failed | ink outline tag "Email failed" |
 
+**Sign-in and registration** use a split layout: the form on plain paper on the left, the real calendar (a captured screenshot) on the desk on the right, hidden on phones. The demo account is a separate, quieter path under the form, not a second primary action.
+
 ## Tokens
 
 All colours and fonts come from `src/TutoringManager.Web/src/styles/tokens.css` (OKLCH). Nothing outside the token block uses a literal colour or font family.
@@ -28,9 +30,10 @@ All colours and fonts come from `src/TutoringManager.Web/src/styles/tokens.css` 
 
 ## Type
 
-- General Sans 400/500/600 throughout; headings 600, tracking -0.03em, sentence case.
-- Geist Mono only for figures in columns (amounts, times, account numbers).
-- App scale fixed at 1.2 (body 16px). Labels: body face a step smaller, sentence case, `--color-muted`. Never tracked capitals.
+- **General Sans** 600 for headings and the wordmark only: tracking -0.03em, sentence case. It carries the brand.
+- **Geist** 400/500/600 for everything people read and use: body, labels, tables, buttons, inputs. Chosen after a UI audit: General Sans is a display-leaning grotesk and gets tiring at 14 to 16 px in dense screens; Geist is built for UI text and has proper tabular numerals.
+- **Figures** (amounts, times) in Geist with `tabular-nums`, so columns line up without a monospace look. **Geist Mono** only for bank account numbers, where character-by-character reading matters.
+- App scale fixed at 1.2 (body 16px). Labels: a step smaller, sentence case, `--color-muted`. Never tracked capitals.
 
 ## Surfaces and controls
 
