@@ -32,8 +32,8 @@ export const Title: React.FC<{ kicker?: string; head: string; line?: string }> =
 );
 
 /** A screen recording laid on the desk as a sheet of paper, with its caption above. */
-export const Clip: React.FC<{ src: string; caption: string; trimBefore: number; width?: number; height?: number; zoom?: [number, number] }> = ({
-  src, caption, trimBefore, width = 1440, height = 900, zoom = [1, 1],
+export const Clip: React.FC<{ src: string; caption: string; trimBefore: number; playbackRate?: number; width?: number; height?: number; zoom?: [number, number] }> = ({
+  src, caption, trimBefore, playbackRate = 1, width = 1440, height = 900, zoom = [1, 1],
 }) => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
@@ -49,7 +49,7 @@ export const Clip: React.FC<{ src: string; caption: string; trimBefore: number; 
           scale: interpolate(frame, [0, durationInFrames], zoom, { extrapolateRight: "clamp" }),
         }}
       >
-        <Video src={staticFile(src)} trimBefore={trimBefore} muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        <Video src={staticFile(src)} trimBefore={trimBefore} playbackRate={playbackRate} muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       </div>
     </AbsoluteFill>
   );
