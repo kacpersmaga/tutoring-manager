@@ -1,17 +1,17 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { api, ApiError, type Series, type StudentDetails, type StudentNote, type Transaction } from '../api'
+import { api, ApiError, type Series, type StudentDetails, type Transaction } from '../api'
 import { Balance } from '../components/Balance'
 import { Dialog } from '../components/Dialog'
-import { EmptyState, ErrorState, FormError, Skeleton } from '../components/States'
-import { endTime, formatAccount, formatLongDate, formatMoney, formatShortDate, formatTime } from '../format'
+import { ErrorState, FormError, Skeleton } from '../components/States'
+import { endTime, formatAccount, formatMoney, formatShortDate, formatTime } from '../format'
 import { useLoad } from '../hooks'
 import { StudentFormDialog } from './StudentFormDialog'
+import { StudentNotes } from './StudentNotes'
 
 export function StudentPage() {
   const { id } = useParams()
   const student = useLoad<StudentDetails>(`/api/students/${id}`)
-  const notes = useLoad<StudentNote[]>(`/api/students/${id}/notes`)
   const payments = useLoad<Transaction[]>(`/api/students/${id}/payments`)
   const series = useLoad<Series[]>(`/api/series?studentId=${id}`)
   const [editing, setEditing] = useState(false)
@@ -26,39 +26,37 @@ export function StudentPage() {
       <nav className="breadcrumb" aria-label="Breadcrumb">
         <Link to="/app/students">Students</Link>
       </nav>
-      <header className="page__header student-head">
-        <div>
+      <header className="student-head">
+        <div className="student-head__title">
           <h1>{s.fullName}</h1>
-          <p className="muted">
-            {s.email}, {formatMoney(s.ratePerLesson)} a lesson{!s.isActive && ', inactive'}
-          </p>
+          <button type="button" className="btn btn--card" onClick={() => setEditing(true)}>Edit student</button>
         </div>
-        <div className="student-head__balance">
-          <span className="muted">Balance</span>
-          <Balance amount={s.balance} withLabel />
-        </div>
-        <div className="page__actions">
-          <button type="button" className="btn btn--card" onClick={() => setEditing(true)}>Edit</button>
-        </div>
+        <dl className="student-facts">
+          <div>
+            <dt>Balance</dt>
+            <dd><Balance amount={s.balance} withLabel large /></dd>
+          </div>
+          <div>
+            <dt>Rate</dt>
+            <dd><span className="student-facts__value fig">{formatMoney(s.ratePerLesson)}</span> a lesson</dd>
+          </div>
+          <div>
+            <dt>Reminders go to</dt>
+            <dd className="student-facts__email">{s.email}</dd>
+          </div>
+          {!s.isActive && (
+            <div>
+              <dt>Status</dt>
+              <dd>Inactive</dd>
+            </div>
+          )}
+        </dl>
       </header>
 
       <div className="student-grid">
-        <section aria-labelledby="notes-title" className="student-grid__main">
-          <h2 id="notes-title">Lesson notes</h2>
-          {notes.loading && !notes.data && <Skeleton rows={3} height={88} />}
-          {notes.error && <ErrorState error={notes.error} onRetry={notes.reload} />}
-          {notes.data?.length === 0 && (
-            <EmptyState title="No notes yet." text="Open a lesson in the calendar and write what you covered; it lands here, newest first." />
-          )}
-          <ol className="notes">
-            {notes.data?.map((n) => (
-              <li key={n.lessonId} className="stock note-card">
-                <p className="note-card__date">{formatLongDate(n.date)}, {formatTime(n.startTime)}</p>
-                <p className="note-card__text">{n.content}</p>
-              </li>
-            ))}
-          </ol>
-        </section>
+        <div className="student-grid__main">
+          <StudentNotes studentId={s.id} />
+        </div>
 
         <aside className="student-grid__side">
           <section aria-labelledby="weekly-title">

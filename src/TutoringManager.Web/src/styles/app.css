@@ -210,11 +210,14 @@
 
 /* ---------- Balance ---------- */
 
-.balance { white-space: nowrap; }
+.balance { display: inline-flex; align-items: baseline; gap: var(--space-xs); white-space: nowrap; }
+.balance--large .fig { font-size: var(--text-xl); font-weight: 500; }
+.balance__tag { align-self: center; }
+.balance__tag--owed { border-color: var(--color-error); color: var(--color-error); }
+.balance__tag--credit { border-color: var(--color-ink); color: var(--color-ink); }
 .balance--owed { color: var(--color-error); }
 .balance--credit { color: var(--color-ink); }
-.balance--settled { color: var(--color-muted); }
-.balance__label { margin-left: var(--space-xs); font-family: var(--font-body); font-size: var(--text-sm); color: var(--color-muted); }
+.balance--settled { color: var(--color-ink); }
 
 /* ---------- Tables ---------- */
 
@@ -304,16 +307,39 @@
 
 /* ---------- Students ---------- */
 
-.student-head { align-items: center; }
-.student-head > div:first-child { flex: 1 1 18rem; display: grid; gap: var(--space-2xs); }
-.student-head__balance { display: grid; justify-items: end; gap: var(--space-3xs); font-size: var(--text-2xl); }
-.student-head__balance .muted { font-size: var(--text-sm); }
-@media (max-width: 40rem) { .student-head__balance { justify-items: start; } }
+.student-head { display: grid; gap: var(--space-lg); padding-bottom: var(--space-sm); }
+.student-head__title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-md); }
+.student-head__title h1 { font-size: var(--text-3xl); }
+/* Sibling facts part with vertical hairlines: no leading padding on the first, none trailing on the last. */
+.student-facts { display: flex; flex-wrap: wrap; margin: 0; }
+.student-facts > div { display: grid; align-content: start; min-width: 0; gap: var(--space-2xs); padding: 0 var(--space-xl); border-left: var(--rule-hair) solid var(--color-rule); }
+.student-facts > div:first-child { padding-left: 0; border-left: 0; }
+.student-facts dt { font-size: var(--text-sm); color: var(--color-muted); }
+.student-facts dd { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-xs); min-width: 0; min-height: 2rem; color: var(--color-ink-2); }
+.student-facts__value { font-size: var(--text-xl); font-weight: 500; color: var(--color-ink); }
+.student-facts__email { align-items: center; }
+@media (max-width: 40rem) {
+  .student-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md) 0; }
+  .student-facts > div:nth-child(odd) { padding-left: 0; border-left: 0; }
+  .student-facts > div:nth-child(even) { padding-right: 0; }
+  .student-facts > div:nth-child(3) { grid-column: 1 / -1; }
+}
+
 .student-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: var(--space-2xl); align-items: start; }
 .student-grid__side { display: grid; gap: var(--space-xl); }
 @media (max-width: 60rem) { .student-grid { grid-template-columns: minmax(0, 1fr); gap: var(--space-xl); } }
 
+.section-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); margin-bottom: var(--space-sm); }
+.section-head h2 { margin: 0; }
+.student-notes { display: grid; gap: var(--space-md); }
 .notes { display: grid; gap: var(--space-md); margin: 0; padding: 0; list-style: none; }
+.notes__more { justify-self: start; }
+.note-card__top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); }
+.note-card__tools { display: flex; gap: var(--space-3xs); margin-right: calc(-1 * var(--space-sm)); }
+.note-card__actions { display: flex; justify-content: flex-end; gap: var(--space-xs); }
+.note-card--form { gap: var(--space-md); }
+.link-button { padding: 0; border: 0; background: none; font: inherit; font-weight: 600; color: var(--color-ink); text-decoration: underline; text-underline-offset: 0.16em; cursor: pointer; }
+.link-button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 .note-card { display: grid; gap: var(--space-xs); padding: var(--space-md) var(--space-lg); }
 .note-card__date { font-size: var(--text-sm); color: var(--color-muted); }
 .note-card__text { white-space: pre-line; max-width: 65ch; }
