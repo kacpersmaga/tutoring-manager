@@ -28,6 +28,10 @@ export interface Lesson {
 
 export interface StudentNote { lessonId: string; date: string; startTime: string; content: string; updatedAt: string }
 
+export interface StudentNotesPage { notes: StudentNote[]; hasMore: boolean }
+
+export interface LessonWithoutNote { lessonId: string; date: string; startTime: string }
+
 export interface Series {
   id: string; studentId: string; dayOfWeek: DayOfWeek; startTime: string; durationMinutes: number
   startDate: string; endDate: string | null
