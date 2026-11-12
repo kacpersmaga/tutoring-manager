@@ -1,12 +1,13 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { api, ApiError } from '../api'
 import { useAuth } from '../auth'
 import { Field } from '../components/Field'
 import { FormError } from '../components/States'
 
 export function AccountPage() {
-  const { me } = useAuth()
+  const { me, signOut } = useAuth()
+  const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -35,6 +36,20 @@ export function AccountPage() {
         <div><dt>Email</dt><dd>{me?.email}</dd></div>
         <div><dt>Time zone</dt><dd>{me?.timeZoneId}</dd></div>
       </dl>
+      <div className="page__actions">
+        {me?.isDemo && (
+          <button type="button" className="btn btn--card" onClick={async () => {
+            if (!window.confirm('Put the demo account back to its starting state? Your changes in it are lost.')) return
+            await api.post('/api/demo/reset')
+            window.location.assign('/app')
+          }}>
+            Reset demo
+          </button>
+        )}
+        <button type="button" className="btn btn--card" onClick={async () => { await signOut(); navigate('/app/login') }}>
+          Sign out
+        </button>
+      </div>
       <p className="muted">
         What is stored and why: <Link to="/privacy" className="link">Privacy</Link>.
       </p>

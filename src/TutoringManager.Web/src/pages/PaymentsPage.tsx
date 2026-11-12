@@ -48,13 +48,14 @@ export function PaymentsPage() {
           <EmptyState title="Nothing to settle this month." text="Completed lessons and matched transfers show up here, per student." />
         )}
         {report.data && report.data.students.length > 0 && (
+          <div className="table-scroll">
           <table className="table">
             <thead>
               <tr>
                 <th scope="col">Student</th>
                 <th scope="col" className="num hide-narrow">Lessons</th>
                 <th scope="col" className="num hide-narrow">Brought forward</th>
-                <th scope="col" className="num">Due</th>
+                <th scope="col" className="num hide-narrow">Due</th>
                 <th scope="col" className="num">Paid</th>
                 <th scope="col" className="num">Balance</th>
               </tr>
@@ -65,13 +66,14 @@ export function PaymentsPage() {
                   <th scope="row"><Link to={`/app/students/${r.studentId}`} className="row-link">{r.fullName}</Link></th>
                   <td className="num fig hide-narrow">{r.lessonsCompleted}</td>
                   <td className="num hide-narrow"><Balance amount={r.openingBalance} /></td>
-                  <td className="num fig">{formatMoney(r.dueInMonth)}</td>
+                  <td className="num fig hide-narrow">{formatMoney(r.dueInMonth)}</td>
                   <td className="num fig">{formatMoney(r.paidInMonth)}</td>
                   <td className="num"><Balance amount={r.closingBalance} /></td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
         )}
         <p className="ledger__foot muted">Balance = everything paid minus every completed lesson, up to the end of the month.</p>
       </section>
@@ -160,7 +162,7 @@ function UnmatchedRow({ transaction: t, students, onAssigned }: { transaction: T
         <span className="transfer__amount fig">{formatMoney(t.amount)}</span>
         <span>{t.counterpartyName || 'Unknown sender'}</span>
         <span className="muted">{formatShortDate(t.bookingDate)}, “{t.title}”</span>
-        {t.counterpartyAccount && <span className="muted fig">{formatAccount(t.counterpartyAccount)}</span>}
+        {t.counterpartyAccount && <span className="muted mono">{formatAccount(t.counterpartyAccount)}</span>}
       </div>
       <div className="transfer__assign">
         <label className="visually-hidden" htmlFor={`student-${t.id}`}>Student</label>
