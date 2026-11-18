@@ -1,4 +1,3 @@
-
 /* Page scale for the landing page only; the app keeps its denser scale from tokens.css. */
 .landing {
   --text-display: clamp(2.75rem, 5vw + 1rem, 5.25rem);

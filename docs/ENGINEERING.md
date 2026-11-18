@@ -77,7 +77,6 @@ flowchart LR
 - **Dependencies:** Dependabot for NuGet, npm and GitHub Actions; NuGet audit fails the build on known vulnerabilities (warnings are errors).
 - **Privacy and erasure:** a short privacy page (`/privacy`); deleting a student erases their data, deleting the account (password required) erases everything. Students may be under 18, so only a name, an email and payment accounts are stored.
 
-
 ## Run it in 2 minutes
 
 Requirements: Docker. Nothing else: the front end and the API are built inside the image.
