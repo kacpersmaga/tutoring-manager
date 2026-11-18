@@ -17,7 +17,7 @@ public record ImportResult(
 public class ImportService(
     AppDbContext db,
     CurrentTutor currentTutor,
-    IEnumerable<IBankStatementParser> parsers,
+    MBankParser parser,
     TimeProvider time)
 {
     public const long MaxFileBytes = 1024 * 1024;
@@ -33,9 +33,11 @@ public class ImportService(
         }
 
         var content = StatementText.Decode(bytes);
-        var parser = parsers.FirstOrDefault(p => p.CanParse(content))
-            ?? throw ApiException.Validation("file", "Unrecognised statement format. Supported banks: " +
-                string.Join(", ", parsers.Select(p => p.BankFormat)) + ".");
+        if (!parser.CanParse(content))
+        {
+            throw ApiException.Validation("file", "Unrecognised statement format. Supported bank: mBank.");
+        }
+
         var incoming = parser.Parse(content).Where(t => t.Amount > 0).ToList();
 
         var import = new BankImport

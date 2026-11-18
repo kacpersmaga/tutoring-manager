@@ -36,7 +36,7 @@ builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<EmailScheduler>();
 builder.Services.AddScoped<EmailDispatcher>();
-builder.Services.AddSingleton<IBankStatementParser, MBankParser>();
+builder.Services.AddSingleton<MBankParser>();
 builder.Services.AddScoped<ImportService>();
 builder.Services.AddScoped<TransactionService>();
 builder.Services.AddScoped<ReportService>();

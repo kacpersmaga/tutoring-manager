@@ -11,16 +11,6 @@ public record ParsedTransaction(
     string CounterpartyName,
     string Title);
 
-/// <summary>One implementation per bank. Parsers only turn text into typed values; nothing is executed.</summary>
-public interface IBankStatementParser
-{
-    string BankFormat { get; }
-
-    bool CanParse(string content);
-
-    IReadOnlyList<ParsedTransaction> Parse(string content);
-}
-
 public static class StatementText
 {
     static StatementText() => Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);

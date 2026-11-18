@@ -9,7 +9,7 @@ namespace TutoringManager.Api.Payments;
 /// and one operation per line. Amounts use a decimal comma and spaces as thousand separators.
 /// Columns are found by name, so their order does not matter.
 /// </summary>
-public class MBankParser : IBankStatementParser
+public class MBankParser
 {
     private const string DateColumn = "#Data księgowania";
     private const string TitleColumn = "#Tytuł";
