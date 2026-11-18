@@ -1,6 +1,6 @@
 # Engineering notes
 
-The technical side of [Tutoring Manager](../README.md): how it is built, why, and how to run, test and deploy it.
+The technical side of [Tutoring Manager](../README.md): how it is built, why, and how to run and test it.
 
 ## How it works
 
@@ -34,7 +34,7 @@ flowchart LR
 - **PostgreSQL with snake_case names** (`EFCore.NamingConventions`). Column names match PostgreSQL conventions, so the raw SQL used in a few places (exclusion constraint, email queue) reads naturally.
 - **Demo data is generated relative to today** by `DemoSeeder`, only when `Demo__Enabled=true` (set in `docker-compose.yml`), so the demo never looks stale and production never gets a demo account.
 - **Data protection keys live in PostgreSQL** (`PersistKeysToDbContext`), so sign-ins survive a container restart and several instances can read each other's cookies.
-- **Migrations run on startup** (`Database.MigrateAsync`). Simplest option for a single instance run locally. With several instances you would run them as a separate deployment step.
+- **Migrations run on startup** (`Database.MigrateAsync`). Simplest option for a single instance run locally.
 - **Tests use a real PostgreSQL** (Testcontainers) instead of the in-memory provider, because key guarantees live in the database (constraints, `FOR UPDATE SKIP LOCKED`).
 - **Cookie sign-in instead of JWT.** The SPA and the API share one origin, so an HttpOnly cookie is the simplest secure option: JavaScript never sees the session, and there is no refresh-token dance. The price is CSRF, handled with antiforgery tokens (see Security).
 - **Tenant isolation in one place.** Every tutor-owned table has `TutorId` and a global query filter in `AppDbContext`, so a forgotten `Where` cannot leak another tutor's data. Another tutor's resources answer 404, not 403, so their existence is not revealed.
@@ -78,10 +78,6 @@ flowchart LR
 - **Privacy and erasure:** a short privacy page (`/privacy`); deleting a student erases their data, deleting the account (password required) erases everything. Students may be under 18, so only a name, an email and payment accounts are stored.
 
 
-## What's deliberately missing
-
-Queues, Redis, microservices, Kubernetes, CQRS, student accounts, online payments, SMS, a mobile app. Each would add moving parts without solving a problem this product has today.
-
 ## Run it in 2 minutes
 
 Requirements: Docker. Nothing else: the front end and the API are built inside the image.
@@ -110,38 +106,3 @@ Requirements: .NET 10 SDK and Docker (integration tests start a real PostgreSQL 
 ```bash
 dotnet test
 ```
-
-### Screenshots, GIF and film
-
-Everything visual in this README is generated from the running demo, so it can be refreshed after any UI change:
-
-```bash
-cd scripts/screenshots && npm install && npx playwright install chromium
-npm run screenshots        # docs/images/*.jpg and the landing page's product shots
-node social-images.mjs     # Open Graph image and the repository's social preview
-node readme-slides.mjs     # the README slides in docs/readme
-node audit.mjs             # UI audit: contrast, touch targets, labels, overflow at desktop and phone width
-npm run record             # flow clips for the film (needs a fresh demo: docker compose down -v && docker compose up)
-cd ../../video && npm install
-npx remotion render DemoFilm out/tutoring-manager-demo.mp4
-npx remotion render ReadmeGif out/demo.gif --codec=gif
-```
-
-## Deployment
-
-The project is not hosted; it runs locally with one command. To run it in production, build the same image and set:
-
-| Variable | Purpose |
-| --- | --- |
-| `ConnectionStrings__Default` | PostgreSQL 16 connection string |
-| `Email__SmtpHost`, `Email__SmtpPort`, `Email__SmtpUseStartTls`, `Email__SmtpUsername`, `Email__SmtpPassword` | any SMTP server or transactional email provider |
-| `Email__FromAddress`, `Email__FromName` | the sender of attendance emails |
-| `Email__PublicBaseUrl` | the public address, used in attendance links |
-| `Security__HttpsOnly=true` | HTTPS redirect, HSTS, `Secure` cookies |
-| `Demo__Enabled` | leave unset (false) |
-
-Put TLS in front (a reverse proxy or the platform's ingress). Migrations run on startup, which suits one instance; with several, run them as a release step. The email worker is already safe to run on several instances.
-
-## Roadmap
-
-Late-cancellation fee, SMS reminders, student accounts, online payments, more banks, PDF export, a queue once there are thousands of emails per minute or other systems reacting to events.
