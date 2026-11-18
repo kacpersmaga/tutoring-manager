@@ -74,7 +74,7 @@ flowchart LR
 - **Headers:** `Content-Security-Policy` (scripts from self only, no framing, no plugins), `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer` (the attendance token sits in the URL and must never leak in a Referer), `Permissions-Policy`.
 - **Logs** carry ids and counts, never names, email addresses, tokens or note contents. Request paths (which contain attendance tokens) are not logged at the default level; SMTP failures log the exception type only.
 - **Secrets** never live in the repository. The only credentials in it are the local demo account and the local database password in `docker-compose.yml`, both for a machine-local demo.
-- **Dependencies:** Dependabot for NuGet, npm and GitHub Actions; NuGet audit fails the build on known vulnerabilities (warnings are errors).
+- **Dependencies:** NuGet audit fails the build on known vulnerabilities (warnings are errors).
 - **Privacy and erasure:** a short privacy page (`/privacy`); deleting a student erases their data, deleting the account (password required) erases everything. Students may be under 18, so only a name, an email and payment accounts are stored.
 
 ## Run it in 2 minutes
